@@ -99,7 +99,7 @@ namespace PaletsWebApp.Controllers
 
             if (loggedInUserRole[0] != WebsiteRoles.Admin)
             {
-                //RefactorizaciÃ³n para legibilidad: Usa IQueryable en lugar de from para mejorar la claridad
+                //Refactorización para legibilidad: Usa IQueryable en lugar de from para mejorar la claridad
                 Transferencias = Transferencias.Where(s =>
                     s.ApplicationUserIdEnvia == loggedInUser!.Id ||
                     s.ApplicationUserIdRecibe == loggedInUser!.Id);
@@ -283,7 +283,7 @@ namespace PaletsWebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            // ObtÃ©n los IDs de los estados "disponible" y "reclamados"
+            // Obtén los IDs de los estados "disponible" y "reclamados"
             var estadosIds = await _context.Catalogos!
                 .Where(x => x.Categoria == "estado_palets" &&
                             (x.Descripcion!.ToLower() == "disponible" || x.Descripcion!.ToLower() == "reclamado"))
@@ -475,7 +475,7 @@ namespace PaletsWebApp.Controllers
                 {
                     Id = dr.Id,
                     Descripcion = dr.Descripcion ?? string.Empty,
-                    IsSelected = selectedPalets.Any(p => p.Id == dr.Id), // Marcar como seleccionado si ya estÃ¡ en la lista
+                    IsSelected = selectedPalets.Any(p => p.Id == dr.Id), // Marcar como seleccionado si ya está en la lista
                     Estado = dr.Estado,
                 }).ToList();
 
@@ -504,7 +504,7 @@ namespace PaletsWebApp.Controllers
 
             ViewBag.PalletRequired = false;
 
-            // Validar que al menos un pallet estÃ© seleccionado
+            // Validar que al menos un pallet está seleccionado
             if (ct == 0)
             {
                 var list_paletsVM = JsonSerializer.Deserialize<List<PaletVM>>(vm.JsonPalets ?? "[]") ?? new List<PaletVM>();
@@ -545,7 +545,7 @@ namespace PaletsWebApp.Controllers
                 CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss"),
                 FechaEnvio = DateTime.UtcNow, // Guardar en UTC
                 ApplicationUserIdEnvia = loggedInUser!.Id,
-                ApplicationUserIdRecibe = "Administradores", // Sin asignar a ningÃºn administrador especÃ­fico
+                ApplicationUserIdRecibe = "Administradores", // Sin asignar a ningún administrador específico
                 Estado = estadoPorReclamar.Id.ToString()
             };
 
@@ -588,7 +588,7 @@ namespace PaletsWebApp.Controllers
                     admin.Nombres + " " + admin.Apellidos,
                     "Nuevo reclamo de pallets",
                     "El usuario " + loggedInUser.Nombres + " " + loggedInUser.Apellidos +
-                    " ha generado un reclamo de pallets. Revise el reclamo para tomar una acciÃ³n."
+                    " ha generado un reclamo de pallets. Revise el reclamo para tomar una acción."
                 );
             }
 
@@ -649,7 +649,7 @@ namespace PaletsWebApp.Controllers
                     {
                         var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
 
-                        // Validar si el pallet estÃ¡ en estado "Reclamado"
+                        // Validar si el pallet está en estado "Reclamado"
                         if (estadoReclamado != null && regPalet.Estado == estadoReclamado.Id.ToString())
                         {
                             // Registrar que el pallet no puede ser asignado porque ya fue reclamado
@@ -666,7 +666,7 @@ namespace PaletsWebApp.Controllers
                             continue; // Pasar al siguiente pallet
                         }
 
-                        // Si el pallet no estÃ¡ reclamado, asignarlo al usuario receptor
+                        // Si el pallet no está reclamado, asignarlo al usuario receptor
                         regPalet.Estado = newEstadoPalet.Id.ToString();
                         regPalet.ApplicationUserId = reg.ApplicationUserIdRecibe;
                     }

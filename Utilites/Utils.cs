@@ -197,8 +197,8 @@ namespace PaletsWebApp.Utilites
 
             try
             {
-                // ObtÃ©n el token de acceso (puedes almacenarlo en cachÃ© para mejorar el rendimiento)
-                var accessToken = await GetAccessToken();  // Ya no necesitas pasar GoogleCredential aquÃ­.
+                // Obtén el token de acceso (puedes almacenarlo en caché para mejorar el rendimiento)
+                var accessToken = await GetAccessToken();  // Ya no necesitas pasar GoogleCredential aquí.
 
                 // Define la URL de la API de FCM V1
                 string fcmUrl = "https://fcm.googleapis.com/v1/projects/portal-bonilla/messages:send";
@@ -241,12 +241,12 @@ namespace PaletsWebApp.Utilites
 
         public static async Task<string> GetAccessToken()
         {
-            // AquÃ­ no se necesita el await ya que FromFile() es sincrÃ³nico
+            // Aquí no se necesita el await ya que FromFile() es sincrónico
             GoogleCredential credential = GoogleCredential
                 .FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "serviceAccountKey.json"))  // Ajusta la ruta a tu archivo JSON
                 .CreateScoped("https://www.googleapis.com/auth/cloud-platform");
 
-            // Esta parte sÃ­ debe usar await ya que es una llamada asÃ­ncrona
+            // Esta parte sí debe usar await ya que es una llamada asíncrona
             return await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
         }
 
