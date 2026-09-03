@@ -1,0 +1,12 @@
+.vs/
+bin/
+obj/
+*.user
+*.suo
+.warning-pass*.log
+.removed-ticket-backup/
+appsettings.Development.json
+
+Data/serviceAccountKey.json
+appsettings.json
+*.pubxml.user

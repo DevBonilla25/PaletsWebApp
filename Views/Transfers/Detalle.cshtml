@@ -1,0 +1,355 @@
+﻿@model PaletsWebApp.ViewModels.TransferenciaVM
+
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<ApplicationUser> _userManager;
+@{
+    ViewData["Title"] = "Ver Transferecia";
+
+    string estadoRecibido = (string)ViewBag.estadoRecibido;
+    string estadoReclamado = (string)ViewBag.estadoReclamado;
+    string estadoRechazado = (string)ViewBag.estadoRechazado;
+    string estadoPorRecibir = (string)ViewBag.estadoPorRecibir;
+    string estadoPorReclamar = (string)ViewBag.estadoPorReclamar;
+    string estadoAnulado = (string)ViewBag.estadoAnulado;
+
+    string lblTitlePaletsList = Model.Estado == estadoPorRecibir ? "Pallets a transferir" :
+                                Model.Estado == estadoPorReclamar ? "Pallets a reclamar" :
+                                Model.Estado == estadoRecibido ?   "Pallets recibidos" : 
+                                Model.Estado == estadoReclamado ?   "Pallets reclamados" : 
+                                Model.Estado == estadoRechazado ?  "Pallets rechazados" : "";
+
+    bool isAdmin = false;
+    var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
+
+    if (loggedInUser != null && await _userManager.IsInRoleAsync(loggedInUser, "Admin"))
+    {
+        isAdmin = true;
+    }
+
+
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Transfers">Regresar</a>
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h4 class="card-title text-white">Detalles de Transferencia</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Detalle" asp-controller="Transfers" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="JsonPalets" />
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="mb-2">
+
+                            <label>Codigo:</label>
+                            <input type="text" asp-for="CodigoInterno" ReadOnly="true" class="form-control" />
+
+                            <label>Transferido de:</label>
+                            <input type="text" asp-for="NombreUserEnvia" ReadOnly="true" class="form-control" />
+
+                            <label>Transferido para:</label>
+                            <input type="text" asp-for="NombreUserRecibe" ReadOnly="true" class="form-control" />
+
+                            <label>Estatus:</label>
+                            <input type="text" asp-for="DescEstado" ReadOnly="true" class="form-control" />
+                            
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label>Fecha envio:</label>
+                            <input type="text" asp-for="FechaEnvio" ReadOnly="true" class="form-control" />
+
+                            @if (Model.Estado == estadoRecibido)
+                            {
+                                <label>Fecha recibido</label>
+                                <input type="text" asp-for="FechaRecibo" ReadOnly="true" class="form-control" />
+                            }
+                          
+                            @if (Model.Estado == estadoRechazado)
+                            {
+                                <label>Fecha rechazado</label>
+                                <input type="text" asp-for="FechaRechazo" ReadOnly="true" class="form-control" />
+                            }
+
+                            @if (Model.Estado == estadoAnulado)
+                            {
+                                <label>Fecha anulado</label>
+                                <input type="text" asp-for="FechaAnulado" ReadOnly="true" class="form-control" />
+                            }
+
+                        </div>
+
+                        <div class="mb-2">
+                            
+                            @{
+                                if (Model.Foto == null)
+                                {
+                                    <img src="~/thumbnails/default_image.jpg" class="img-fluid" id="thumbnail" /> 
+                                }
+
+                                else
+                                {
+                                    //Esta linea obtiene la ruta de la imagen que se almcaena de manera local en el mismo servidor del proyecto
+                                    <!-- <img src="~/thumbnails/@Model.Foto" class="img-fluid" id="thumbnail" /> -->
+
+                                    //Esta linea obtiene link de la imagen almacenada en la base d edatos, que se subio a firebase desde la app móvil
+                                    <img src="@Model.Foto" class="img-fluid" id="thumbnail" alt="Descripción de la imagen" />
+
+
+                                }
+                            }
+
+                        </div>
+
+                        @if (Model.Estado == estadoPorRecibir &&
+                             Model.IdUserRecibe == ViewBag.loggedInUserId)
+                        {
+                            <div class="mb-2">
+                                <label>Foto</label>
+                                <input type="file" asp-for="FotoFile" class="custom-file" />
+                            </div>
+                        }
+
+
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-6">
+
+                        <div class="mb-2">
+                            <label>Observaciones</label>
+                            <textarea id="richEditor" asp-for="Observaciones" class="form-control" rows="8"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+                 <div class="row mb-2">
+                    <div class="col-9">
+                        <div class="mb-2">
+                            <label>
+                                @lblTitlePaletsList
+                            </label>
+                            <ul>
+                                @foreach(var palet in Model.Palets!)
+                                {
+                                    <li>
+                                        @palet.Descripcion
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+
+                @if ((Model.Estado == estadoPorRecibir && Model.IdUserRecibe == ViewBag.loggedInUserId) ||
+                    (Model.Estado == estadoPorReclamar && isAdmin))
+                {
+                    <div class="row">
+                        <div class="one">
+
+                            <button type="submit"
+                                    style="display:none;"
+                                    id="btnRechazar"
+                                    name="submit" value="rechazar">
+                            </button>
+
+                            <a href="javascript:void(0)" id="@Model.Id" class="btn btn-danger rechazar-prompt">Rechazar</a>
+
+
+                            <button type="submit"
+                                    style="display:none;"
+                                    id="btnAceptar"
+                                    name="submit" value="aceptar">
+                            </button>
+
+                            <a href="javascript:void(0)" id="@Model.Id" class="btn btn-success aceptar-prompt">Aceptar</a>
+                            
+                            
+                        </div>
+                    </div>
+                }
+
+                @if ((Model.Estado == estadoPorRecibir && (Model.IdUserEnvia == ViewBag.loggedInUserId || isAdmin)) ||
+                (Model.Estado == estadoPorReclamar && Model.IdUserEnvia == ViewBag.loggedInUserId))
+                {
+                    <div class="row">
+                        <div class="one" style="padding-top:10px;">
+                            <button type="submit"
+                                    style="display:none;"
+                                    id="btnAnular"
+                                    name="submit" value="anular">
+                            </button>
+                            <a href="javascript:void(0)" id="@Model.Id" class="btn btn-danger anular-prompt">Anular</a>
+                        </div>
+                    </div>
+                }
+     
+
+               
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Bootstrap modal popup -->
+<div class="modal fade" id="myModalAceptar" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header alert alert-ok">
+                <h4 class="modal-title" id="myModalLabel">Confirmación</h4>
+                @*<button type="button" class="close" onclick="$('#myModalAceptar').modal('toggle');" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>*@
+                
+            </div>
+            <div class="modal-body">
+                <p class="success-message">Esta seguro(a) que desea aceptar la transferencia ? </p>
+            </div>
+            <div class="modal-footer" style="display:inline-block">
+                <button class="btn btn-default" style="border-color: gray; float:left; color: #212529!important;" onclick="$('#myModalAceptar').modal('toggle');">Cancelar</button>
+                <button class="btn btn-primary aceptar-confirm" style="float:right;">Aceptar</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="myModalRechazar" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header alert alert-danger">
+                <h4 class="modal-title" id="myModalLabel">Confirmación</h4>
+                @*<button type="button" class="close" onclick="$('#myModalRechazar').modal('toggle');" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>*@
+               
+            </div>
+            <div class="modal-body">
+                <p class="success-message">Esta seguro(a) que desea rechazar la transferencia ? </p>
+            </div>
+            <div class="modal-footer" style="display:inline-block">
+                <button class="btn btn-default" style="border-color: gray; float:left; color: #212529!important;" onclick="$('#myModalRechazar').modal('toggle');">Cancelar</button>
+                <button class="btn btn-primary rechazar-confirm" style="float:right;">Rechazar</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="myModalAnular" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header alert alert-danger">
+                <h4 class="modal-title" id="myModalLabel">Confirmación</h4>
+            </div>
+            <div class="modal-body">
+                <p class="success-message">Esta seguro(a) que desea anular la transferencia ? </p>
+            </div>
+            <div class="modal-footer" style="display:inline-block">
+                <button class="btn btn-default" style="border-color: gray; float:left; color: #212529!important;" onclick="$('#myModalAnular').modal('toggle');">Cancelar</button>
+                <button class="btn btn-primary anular-confirm" style="float:right;">Anular</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- End of the boostrap modal popup -->
+
+
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+   
+}
+
+<script>
+    $(document).ready(function () {
+        //start of the document ready function
+        //delcaring global variable to hold primary key value.
+        var pryEmpId;
+        $('.rechazar-prompt').click(function () {
+            pryEmpId = $(this).attr('id');
+            $('#myModalRechazar').modal('show');
+        });
+
+        $('.rechazar-confirm').click(function () {
+            if (pryEmpId != '') {
+
+                $("#btnRechazar").click()
+
+            }
+        });
+
+        $('.aceptar-prompt').click(function () {
+            pryEmpId = $(this).attr('id');
+            $('#myModalAceptar').modal('show');
+        });
+
+        $('.aceptar-confirm').click(function () {
+            if (pryEmpId != '') {
+
+                $("#btnAceptar").click()
+
+            }
+        });
+
+
+        $('.anular-prompt').click(function () {
+            pryEmpId = $(this).attr('id');
+            $('#myModalAnular').modal('show');
+        });
+
+        $('.anular-confirm').click(function () {
+            if (pryEmpId != '') {
+
+                $("#btnAnular").click()
+
+            }
+        });
+
+
+
+        //function to reset bootstrap modal popups
+        $("#myModalRechazar").on("hidden.bs.modal", function () {
+            $(".modal-header").removeClass(' ').addClass('alert-danger');
+            $('.delete-confirm').css('display', 'inline-block');
+            $('.success-message').html('').html('Esta seguro(a) que desea rechazar la transferencia ?');
+        });
+
+        //function to reset bootstrap modal popups
+        $("#myModalAnular").on("hidden.bs.modal", function () {
+            $(".modal-header").removeClass(' ').addClass('alert-danger');
+            $('.anular-confirm').css('display', 'inline-block');
+            $('.success-message').html('').html('Esta seguro(a) que desea anular la transferencia ?');
+        });
+
+        $("#myModalAceptar").on("hidden.bs.modal", function () {
+            $(".modal-header").removeClass(' ').addClass('alert-danger');
+            $('.delete-confirm').css('display', 'inline-block');
+            $('.success-message').html('').html('Esta seguro(a) que desea aceptar la transferencia ?');
+        });
+
+
+        //end of the document ready function
+    });
+</script>
+
+<script>
+    $(".custom-file").on("change", function () {
+        var fileName = $(this).val().split("\\").pop();
+        $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        document.getElementById('thumbnail').src = window.URL.createObjectURL(this.files[0])
+    });
+</script>

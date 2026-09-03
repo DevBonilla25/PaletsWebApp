@@ -1,0 +1,115 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@inject UserManager<ApplicationUser> _userManager;
+
+@model PaletsWebApp.ViewModels.PaletVM
+
+@{
+    ViewData["Title"] = "Editar Pallet";
+
+    bool enTransferencia = Model.DescEstado!.ToLower() == "en transferencia" ? true : false;
+    bool estadoInvalido = string.IsNullOrEmpty(Model.Estado) || Model.Estado == "-1" ? true : false;
+
+    var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
+
+    bool isAdmin = false;
+    if (loggedInUser != null && await _userManager.IsInRoleAsync(loggedInUser, "Admin"))
+    {
+        isAdmin = true;
+    }
+
+
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Palets">Regresar</a>
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h4 class="card-title text-white">Editar Pallet</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Editar" asp-controller="Palets" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="row mb-2">
+                    <div class="col-12">
+                    <div class="mb-2">
+
+                            @if (string.IsNullOrEmpty(@Model.Descripcion))
+                            {
+                                <label style="color:red;">Descripción <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Descripción</label>
+                            }
+                        
+                        <input type="text" asp-for="Descripcion" class="form-control" />
+                        <span asp-validation-for="Descripcion" class="text-danger"></span>
+                    </div>
+                    <div class="mb-2">
+                            <label>Observaciones</label>
+                        <textarea id="richEditor" asp-for="Observaciones" class="form-control" rows="5"></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label>Usuario Actual</label>
+                        <input type="text" asp-for="ApplicationUserName" ReadOnly="true" class="form-control" />
+                        
+                    </div>
+                    <div class="mb-2">
+                        <label>Rol</label>
+                        <input type="text" asp-for="RolUser" ReadOnly="true" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+
+                            @if (@estadoInvalido)
+                            {
+                                <label style="color:red;">Estado actual <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Estado actual</label>
+                            }
+
+                        
+                            @{
+                                if (enTransferencia)
+                                {
+                                    <input type="text" asp-for="DescEstado" ReadOnly="true" class="form-control" />
+                                }
+                                else
+                                {
+                                    @Html.DropDownListFor(m=> m.Estado,new SelectList(Model.EstatusList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
+                                    <span asp-validation-for="Estado" class="text-danger"></span>
+                                }
+                            }
+                    </div>
+    
+                </div>
+                </div>
+                
+                @{
+                    if (!enTransferencia && isAdmin)
+                    {
+                        <div class="row">
+                            <div class="one">
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="btnAceptar">
+                                    Guardar
+                                </button>
+
+                            </div>
+                        </div>
+                    }
+                }
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+   
+}
+

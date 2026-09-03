@@ -1,0 +1,80 @@
+﻿@model PaletsWebApp.ViewModels.TransferenciaVM
+
+@{
+    ViewData["Title"] = "Crear Reclamo";
+
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Transfers">Regresar</a>
+    <div class="card">
+
+        <div class="card-header bg-primary">
+            <div class="row">
+                <div class="col-8">
+                    <h4 class="card-title text-white">Reclamar Palets</h4>
+                </div>
+            </div>
+
+        </div>
+
+     
+
+        <div class="card-body">
+            <form asp-action="Reclamar" method="get">
+                <input type="hidden" id="selectedPaletsJson" name="selectedPaletsJson" value="@Model.JsonPalets" />
+                <div class="col-6 mb-2">
+                    <label for="sDescripcion">Buscar Palet:</label>
+                    <input type="text" name="sDescripcion" value="@ViewData["filterDescripcion"]" class="form-control" autocomplete="off" />
+                </div>
+                <div class="mb-2">
+                    <button type="submit" class="btn btn-outline-primary">Aplicar Filtro</button>
+                    <a asp-action="Reclamar" class="btn btn-outline-secondary">Quitar Filtro</a>
+                </div>
+            </form>
+
+            <br />
+            <!-- Pallets seleccionados -->
+            <h5>Pallets seleccionados:</h5>
+            <form asp-action="Reclamar" asp-controller="Transfers" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="JsonPalets" value="@Model.JsonPalets" />
+                @if (Model.Palets != null && Model.Palets.Any())
+                {
+                    @foreach (var palet in Model.Palets)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   value="@palet.Id"
+                                   id="check_@palet.Id"
+                                   name="UqChecked"
+                            @(palet.IsSelected ? "checked" : "") />
+                            <label class="form-check-label" for="check_@palet.Id">
+                                @palet.Descripcion
+                            </label>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No hay pallets disponibles para reclamar.</p>
+                }
+
+                <button type="submit" class="btn btn-primary" id="btnReclamar" name="submit" value="reclamar">Reclamar</button>
+            </form>
+
+
+
+
+
+        </div>
+
+
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+}
