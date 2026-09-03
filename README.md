@@ -233,4 +233,3 @@ El proyecto contiene una interfaz web MVC y una API en la misma aplicación. Act
 ## Licencia
 
 Este repositorio no declara todavía una licencia. Agrega un archivo `LICENSE` antes de distribuirlo públicamente si corresponde.
-
