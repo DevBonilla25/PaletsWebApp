@@ -1,43 +1,31 @@
 ﻿using AspNetCoreHero.ToastNotification.Abstractions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
 using PaletsWebApp.Data;
 using PaletsWebApp.Models;
 using PaletsWebApp.Utilites;
 using PaletsWebApp.ViewModels;
 using System.Diagnostics;
-using System.Security.Cryptography.Xml;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace PaletsWebApp.Controllers
 {
     public class ApiController : Controller
     {
-        private readonly ILogger<ApiController> _logger;
         private readonly ApplicationDbContext _context;
         public INotyfService _notification { get; }
-        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public ApiController(ILogger<ApiController> logger,
-                             ApplicationDbContext context,
+        public ApiController(ApplicationDbContext context,
                              INotyfService notyfService,
-                             IWebHostEnvironment webHostEnvironment,
                              UserManager<ApplicationUser> userManager,
                              RoleManager<IdentityRole> roleManager)
         {
-            _logger = logger;
             _context = context;
             _notification = notyfService;
-            _webHostEnvironment = webHostEnvironment;
             _userManager = userManager;
             _roleManager = roleManager;
         }
@@ -204,56 +192,6 @@ namespace PaletsWebApp.Controllers
 
 
 
-        // este codigo llama la lista total de todos los palets
-        /*
-        [HttpGet]
-        [Route("api/ApiAccess/GetPalets")]
-        public async Task<ActionResult<List<PaletVM>>> getPalets(string userId, string searchTerm)
-        {
-
-            var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            
-            if(loggedInUser == null)
-                return Problem("Usuario no existe");
-
-            var Palets = from s in _context.PaletsView select s;
-
-            var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] != WebsiteRoles.Admin)
-            {
-                Palets = from s in Palets
-                         where s.ApplicationUserId == loggedInUser!.Id
-                         select s;
-            }
-
-
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                Palets = from s in Palets
-                         where s.UserFullName!.Contains(searchTerm) ||
-                                  s.Descripcion!.Contains(searchTerm) ||
-                                  s.DescEstado!.Contains(searchTerm)
-                            select s;
-            }
-
-
-            var listOfPaletsVM = Palets.Select(x => new PaletVM()
-            {
-                Id = x.Id,
-                Descripcion = x.Descripcion!,
-                FechaCreacion = x.FechaCreacion,
-                Observaciones = x.Observaciones,
-                Estado = x.Estado,
-                DescEstado = x.DescEstado,
-                ApplicationUserId = x.ApplicationUserId,
-                ApplicationUserName = x.UserFullName
-            }).ToList();
-
-
-            return CreatedAtAction("GetPalets", listOfPaletsVM);
-
-        }
-        */
 
         // Este codigo llama las primeras 10 datos de palets por Usario, haciendo paginado
         [HttpGet]
@@ -350,71 +288,6 @@ namespace PaletsWebApp.Controllers
 
 
         // este codigo llama la lista total de todas las transferencias
-        /*
-        [HttpGet]
-        [Route("api/ApiAccess/GetTransfers")]
-        public async Task<ActionResult<List<TransferenciaVM>>> GetTransfers(string userId, string searchTerm)
-        {
-
-            var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == userId);
-
-            if (loggedInUser == null)
-                return Problem("Usuario no existe");
-
-            var Transfers = from s in _context.TransferenciasView select s;
-
-            var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] != WebsiteRoles.Admin)
-            {
-                Transfers = from s in Transfers
-                            where s.ApplicationUserIdEnvia == loggedInUser!.Id ||
-                                  s.ApplicationUserIdRecibe == loggedInUser!.Id
-                                 select s;
-            }
-
-
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-
-               
-                Transfers = from s in Transfers
-                            where s.UserEnviaFullName!.Contains(searchTerm) ||
-                                  s.UserRecibeFullName!.Contains(searchTerm) ||
-                                  s.DescEstado!.Contains(searchTerm)  
-                            select s;
-            }
-                        
-
-
-            if (Transfers.Count() == 0)
-            {
-                return CreatedAtAction("GetTransfers", new List<TransferenciaVM>());
-            }
-
-
-            var listOfTransferVM = Transfers.Select(x => new TransferenciaVM()
-                {
-                    Id = x.Id,
-                    CodigoInterno = x.CodigoInterno!,
-                    FechaEnvio = x.FechaEnvio,
-                    FechaRecibo = x.FechaRecibo,
-                    FechaRechazo = x.FechaRechazo,
-                    FechaAnulado = x.FechaAnulado,
-                    Observaciones = x.Observaciones,
-                    Estado = x.Estado,
-                    DescEstado = x.DescEstado,
-                    Foto = x.Foto,
-                    IdUserEnvia = x.ApplicationUserIdEnvia!,
-                    NombreUserEnvia = x.UserEnviaFullName!,
-                    IdUserRecibe = x.ApplicationUserIdRecibe!,
-                    NombreUserRecibe = x.UserRecibeFullName!,
-                }).ToList();
-
-
-            return CreatedAtAction("GetTransfers", listOfTransferVM);
-
-        }
-        */
 
 
 
@@ -559,69 +432,6 @@ namespace PaletsWebApp.Controllers
 
 
         // Este codigo es de creacion de transferencia sin imagen es el original
-        /*
-        [HttpPost]
-        [Route("api/ApiAccess/AddTransfer")]
-        public async Task<ActionResult<string>> AddTransfer([FromBody] TransferenciaVM regVM)
-        {
-
-            var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
-            var defaultEstado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por recibir").SingleOrDefault();
-
-            var reg = new Transferencia();
-
-            reg.CodigoInterno = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
-            reg.FechaEnvio = DateTime.Now;
-            reg.ApplicationUserIdEnvia = regVM.IdUserEnvia;
-            reg.ApplicationUserIdRecibe = regVM.IdUserRecibe;
-            reg.Estado = defaultEstado!.Id.ToString();
-
-            await _context.Transferencias!.AddAsync(reg);
-
-            await _context.SaveChangesAsync();
-
-
-            var list_palets = JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets!) ?? new List<int>();
-
-
-            var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
-
-            foreach (var pal in list_palets)
-            {
-                var detalle = new Detalle
-                {
-                    IdPalet = pal,
-                    IdTransferencia = reg.Id
-                };
-                await _context.Detalles!.AddAsync(detalle);
-
-                var regPalet = await _context.Palets!.Where(x => x.Id == pal).SingleAsync();
-                regPalet.Estado = newEstadoPalet.Id.ToString();
-
-            }
-
-            await _context.SaveChangesAsync();
-
-
-            var regUserDestino = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserRecibe);
-            var regUserEnvia = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
-
-            if (regUserDestino == null || regUserEnvia == null)
-                return BadRequest("Usuarios de envío o recepción no encontrados.");
-
-            string fullNameUserDestino = regUserDestino.Nombres + " " + regUserDestino.Apellidos;
-
-
-            await Utils.SendNotification(regUserDestino.FirebaseToken,
-                                   regUserDestino.Email ?? string.Empty,
-                                   fullNameUserDestino,
-                                   "Has recibido una transferencia ",
-                                   "El usuario " + regUserEnvia.Nombres + " " + regUserEnvia.Apellidos + " te ha realizado la transferencia con codigo '" + reg.CodigoInterno + "'");
-
-
-            return CreatedAtAction("AddTransfer", "Ok, Transferencia se genero con exito");
-        }
-        */
 
 
         // Este codigo es de creacion de transferencia con almacenamiento local de imagenen en el mismo proyecto
@@ -832,103 +642,6 @@ namespace PaletsWebApp.Controllers
 
 
         //Tiene una version de las fechas que aun no esta probada ya que, internamanete ya esta modificado, habria que probar aun
-        /*
-        [HttpPost]
-        [Route("api/ApiAccess/AddTransfer")]
-        public async Task<ActionResult<string>> AddTransfer(TransferenciaVM regVM)
-        {
-            // Verificación de campos obligatorios en TransferenciaVM
-            if (string.IsNullOrWhiteSpace(regVM.IdUserEnvia) ||
-                string.IsNullOrWhiteSpace(regVM.IdUserRecibe) ||
-                string.IsNullOrWhiteSpace(regVM.JsonPalets))
-            {
-                return BadRequest("Campos obligatorios faltantes o vacíos.");
-            }
-
-            var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
-            var defaultEstado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "por recibir");
-
-            if (defaultEstado == null)
-            {
-                return BadRequest("Estado predeterminado no encontrado en la base de datos.");
-            }
-
-            // Ajuste de la hora a la zona horaria de Ecuador (UTC-5)
-            TimeZoneInfo zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
-            DateTime fechaEnvioLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zonaHoraria);
-
-            // Crear el objeto Transferencia con datos validados
-            var reg = new Transferencia
-            {
-                CodigoInterno = fechaEnvioLocal.ToString("yyyy_MM_dd_HH_mm_ss"),
-                FechaEnvio = fechaEnvioLocal, // Hora ajustada a la zona horaria
-                ApplicationUserIdEnvia = regVM.IdUserEnvia,
-                ApplicationUserIdRecibe = regVM.IdUserRecibe,
-                Estado = defaultEstado.Id.ToString()
-            };
-
-            // Lógica de carga de imagen en Firebase Storage
-            if (regVM.FotoFile != null)
-            {
-                var firebaseStorageService = new FirebaseStorageService();
-
-                using (var stream = regVM.FotoFile.OpenReadStream())
-                {
-                    // Subir a Firebase Storage y obtener la URL pública
-                    reg.Foto = await firebaseStorageService.UploadImageAsync(stream, regVM.FotoFile.FileName);
-                }
-            }
-
-            // Guardar Transferencia en la base de datos
-            await _context.Transferencias!.AddAsync(reg);
-            await _context.SaveChangesAsync();
-
-            // Deserializar y validar la lista de palets
-            var list_palets = JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets!) ?? new List<int>();
-            if (list_palets == null || !list_palets.Any())
-            {
-                return BadRequest("Lista de palets no válida o vacía.");
-            }
-
-            var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
-
-            // Crear detalles de palets y actualizar estados
-            foreach (var pal in list_palets)
-            {
-                var detalle = new Detalle
-                {
-                    IdPalet = pal,
-                    IdTransferencia = reg.Id
-                };
-                await _context.Detalles!.AddAsync(detalle);
-
-                var regPalet = await _context.Palets!.Where(x => x.Id == pal).SingleAsync();
-                regPalet.Estado = newEstadoPalet.Id.ToString();
-            }
-
-            await _context.SaveChangesAsync();
-
-            // Notificar al usuario receptor
-            var regUserDestino = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserRecibe);
-            var regUserEnvia = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
-
-            if (regUserDestino == null || regUserEnvia == null)
-            {
-                return BadRequest("Usuarios de envío o recepción no encontrados.");
-            }
-
-            string fullNameUserDestino = $"{regUserDestino.Nombres} {regUserDestino.Apellidos}";
-            await Utils.SendNotification(
-                regUserDestino.FirebaseToken,
-                regUserDestino.Email ?? string.Empty,
-                fullNameUserDestino,
-                "Has recibido una transferencia",
-                $"El usuario {regUserEnvia.Nombres} {regUserEnvia.Apellidos} te ha realizado la transferencia con código '{reg.CodigoInterno}'"
-            );
-
-            return CreatedAtAction("AddTransfer", "Ok, Transferencia se generó con éxito");
-        }
-        */
 
 
 
@@ -962,23 +675,6 @@ namespace PaletsWebApp.Controllers
             try
             {
                 // Codigo para recibir imagene cuando procesen la transferencia
-                /*
-                string uniqueFileName = "";
-
-                if (imageTransferModel.ImageArray != null)
-                {
-                    var stream = new MemoryStream(imageTransferModel.ImageArray);
-
-                    var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "thumbnails");
-                    uniqueFileName = Guid.NewGuid().ToString() + ".jpg";
-                    var filePath = Path.Combine(folderPath, uniqueFileName);
-                    using (FileStream fileStream = System.IO.File.Create(filePath))
-                    {
-                        stream.CopyTo(fileStream);
-                    }
-
-                }
-                */
 
                 var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
 
@@ -1041,15 +737,6 @@ namespace PaletsWebApp.Controllers
                             if (estadoReclamado != null && regPalet.Estado == estadoReclamado.Id.ToString())
                             {
                                 // Registrar que el pallet no puede ser asignado porque ya fue reclamado
-                                /*
-                                await Utils.SendNotification(
-                                    viewTrans.UserEnviaFirebaseToken,
-                                    viewTrans.UserEnviaEmail ?? string.Empty,
-                                    viewTrans.UserEnviaFullName ?? string.Empty,
-                                    "Pallet reclamado",
-                                    $"El pallet con ID {regPalet.Id} ya fue reclamado y no puede ser transferido."
-                                );
-                                */
                                 _notification.Success($"El {regPalet.Descripcion} ya fue reclamado, por lo tanto, no se te fue asignado");
                                 continue; // Pasar al siguiente pallet
                             }
@@ -1132,131 +819,6 @@ namespace PaletsWebApp.Controllers
 
 
         //PROCESA LA TRANSFERENCIA CON IMAGEN CUANDO EL USUARIO RECIBE [ORIGINAL]   NO RECLAMOS   
-        /*
-        [HttpPost]
-        [Route("api/ApiAccess/ProcessTransfer")]
-        public async Task<IActionResult> ProcessTransfer([FromBody] ImageTransferModel imageTransferModel)
-        {
-
-            try {
-                // Codigo para recibir imagene cuando procesen la transferencia
-                /*
-                string uniqueFileName = "";
-
-                if (imageTransferModel.ImageArray != null)
-                {
-                    var stream = new MemoryStream(imageTransferModel.ImageArray);
-
-                    var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "thumbnails");
-                    uniqueFileName = Guid.NewGuid().ToString() + ".jpg";
-                    var filePath = Path.Combine(folderPath, uniqueFileName);
-                    using (FileStream fileStream = System.IO.File.Create(filePath))
-                    {
-                        stream.CopyTo(fileStream);
-                    }
-
-                }
-                
-
-                var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
-
-                string operacion = imageTransferModel.Estado;
-
-                var regTrans = await _context.Transferencias!.Where(x => x.Id == imageTransferModel.TransferenciaId).SingleAsync();
-                regTrans!.Observaciones = imageTransferModel.Observaciones;
-
-                // Verificar si la transferencia ya está anulada
-                var estadoAnulado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "anulado")?.Id.ToString();
-                if (regTrans.Estado == estadoAnulado)
-                {
-                    // Salir de la operación si la transferencia ya fue anulada
-                    return BadRequest("La transferencia ya ha sido anulada y no puede ser procesada.");
-                }
-
-
-
-                if (operacion == "aceptar")
-                {
-                    regTrans.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "recibido").SingleOrDefault()!.Id.ToString();
-                    regTrans.FechaRecibo = DateTime.UtcNow;
-
-                    var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
-
-                    var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
-
-                    foreach (var det in detalles)
-                    {
-                        var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                        regPalet.Estado = newEstadoPalet.Id.ToString();
-                        regPalet.ApplicationUserId = regTrans.ApplicationUserIdRecibe;
-                    }
-
-                }
-                else if (operacion == "rechazar")
-                {
-                    regTrans.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "rechazado").SingleOrDefault()!.Id.ToString();
-                    regTrans.FechaRechazo = DateTime.UtcNow;
-
-                    var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
-
-                    var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
-
-                    foreach (var det in detalles)
-                    {
-                        var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                        regPalet.Estado = newEstadoPalet.Id.ToString();
-                    }
-
-                }
-                // Esta linea es para almacenar el nombre de la imagen en el campo Foto de la transfeencia
-                //regTrans.Foto = uniqueFileName;
-                await _context.SaveChangesAsync();
-
-
-
-
-
-                // despues de actualizar el estado de la transferencia se envian las notificaciones correspondientes
-                var viewTrans = await _context.TransferenciasView!.Where(x => x.Id == imageTransferModel.TransferenciaId).SingleAsync();
-
-                if (operacion == "aceptar")
-                {
-                    await Utils.SendNotification(viewTrans.UserEnviaFirebaseToken,
-                                           viewTrans.UserEnviaEmail ?? string.Empty,
-                                           viewTrans.UserEnviaFullName ?? string.Empty,
-                                           "Transferencia aceptada",
-                                           "El usuario " + viewTrans.UserRecibeFullName +
-                                           " ha aceptado la transferencia con codigo '" +
-                                           viewTrans.CodigoInterno + "'");
-
-
-
-                }
-                else if (operacion == "rechazar")
-                {
-                    await Utils.SendNotification(viewTrans.UserEnviaFirebaseToken,
-                                           viewTrans.UserEnviaEmail ?? string.Empty,
-                                           viewTrans.UserEnviaFullName ?? string.Empty,
-                                           "Transferencia rechazada",
-                                           "El usuario " + viewTrans.UserRecibeFullName +
-                                           " ha rechazado la transferencia con codigo '" +
-                                           viewTrans.CodigoInterno + "'");
-                }
-
-
-                return StatusCode(StatusCodes.Status201Created);
-
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest);
-            }
-
-
-        }
-        
-
-*/
 
 
 
@@ -1468,6 +1030,7 @@ namespace PaletsWebApp.Controllers
         }
     }
 }
+
 
 
 
