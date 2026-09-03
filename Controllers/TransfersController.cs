@@ -4,19 +4,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using PaletsWebApp.Data;
 using PaletsWebApp.Models;
 using PaletsWebApp.Utilites;
 using PaletsWebApp.ViewModels;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using X.PagedList;
 
 namespace PaletsWebApp.Controllers
 {
@@ -211,74 +206,6 @@ namespace PaletsWebApp.Controllers
 
 
         }
-
-
-        //[HttpGet]
-        //public async Task<IActionResult> Index_old(int? page)
-        //{
-        //    var listxxx = _context.TransferenciasView;
-
-        //    var listyyy = _context.PaletsView;
-
-
-        //    var listOfTransfers = new List<Transferencia>();
-
-        //    var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == User.Identity!.Name);
-        //    var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-        //    if (loggedInUserRole[0] == WebsiteRoles.Admin)
-        //    {
-        //        listOfTransfers = await _context.Transferencias!.ToListAsync();
-        //    }
-        //    else
-        //    {
-        //        listOfTransfers = await _context.Transferencias!.
-        //            Where(x => x.ApplicationUserIdEnvia == loggedInUser!.Id ||
-        //                       x.ApplicationUserIdRecibe == loggedInUser!.Id).ToListAsync();
-        //    }
-
-        //    var qry = from tr in listOfTransfers
-        //              join uenv in _userManager.Users on tr.ApplicationUserIdEnvia equals uenv.Id
-        //              join urec in _userManager.Users on tr.ApplicationUserIdRecibe equals urec.Id
-        //              select new TransferenciaVM
-        //              {
-        //                  Id = tr.Id,
-        //                  CodigoInterno = tr.CodigoInterno,
-        //                  FechaEnvio = tr.FechaEnvio,
-        //                  FechaRecibo = tr.FechaRecibo,
-        //                  FechaRechazo = tr.FechaRechazo,
-        //                  IdUserEnvia = tr.ApplicationUserIdEnvia,
-        //                  NombreUserEnvia = uenv.Nombres + " " + uenv.Apellidos,
-        //                  IdUserRecibe = tr.ApplicationUserIdRecibe,
-        //                  NombreUserRecibe = urec.Nombres + " " + urec.Apellidos,
-        //                  Estado = listEstadosTrans.Where(y => y.Id.ToString() == tr.Estado).SingleOrDefault()!.Descripcion,
-
-        //              };
-
-
-        //    var qry2 = qry.ToList();
-
-        //    int pageSize = 5;
-        //    int pageNumber = (page ?? 1);
-
-        //    var retList = await qry2.OrderByDescending(x => x.Id).ToPagedListAsync(pageNumber, pageSize);
-
-
-        //    var vm = new TransferenciaMasterVM
-        //    {
-        //        Lista = retList,
-        //        Filtro = new FilterTransVM { 
-        //            EnviaDesde = "29/01/2023",
-        //            UsuarioEnvia ="yoyo", 
-        //            UsuarioRecibe="elel",
-        //        }
-        //    };
-
-
-        //    ViewBag.estadoRecibido = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "recibido").SingleOrDefault()!.Id.ToString();
-        //    ViewBag.estadoRechazado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "rechazado").SingleOrDefault()!.Id.ToString();
-
-        //    return View(vm);
-        //}
 
         [HttpGet]
         public async Task<IActionResult> Create()
@@ -653,15 +580,6 @@ namespace PaletsWebApp.Controllers
                         if (estadoReclamado != null && regPalet.Estado == estadoReclamado.Id.ToString())
                         {
                             // Registrar que el pallet no puede ser asignado porque ya fue reclamado
-                            /*
-                            await Utils.SendNotification(
-                                viewTrans.UserEnviaFirebaseToken,
-                                viewTrans.UserEnviaEmail,
-                                viewTrans.UserEnviaFullName,
-                                "Pallet reclamado",
-                                $"El pallet con ID {regPalet.Id} ya fue reclamado y no puede ser transferido."
-                            );
-                            */
                             _notification.Success($"El {regPalet.Descripcion} ya fue reclamado, por lo tanto, no se te fue asignado");
                             continue; // Pasar al siguiente pallet
                         }
@@ -732,111 +650,6 @@ namespace PaletsWebApp.Controllers
 
 
         // este es de transferencia unicamente, el original
-        /*
-        private async Task<bool> procesarTransfer(TransferenciaVM vm, string operacion)
-        {
-            bool ret = false;
-
-            var reg = await _context.Transferencias!.Where(x => x.Id == vm.Id).SingleAsync();
-            reg!.Observaciones = vm.Observaciones;
-
-            if (operacion == "aceptar")
-            {
-                reg.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "recibido").SingleOrDefault()!.Id.ToString();
-                reg.FechaRecibo = DateTime.Now;
-
-                var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == vm.Id).ToListAsync();
-
-                var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
-
-                foreach (var det in detalles)
-                {
-                    var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                    regPalet.Estado = newEstadoPalet.Id.ToString();
-                    regPalet.ApplicationUserId = reg.ApplicationUserIdRecibe;
-                   
-                }
-
-            }
-            else if (operacion == "rechazar")
-            {
-                reg.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "rechazado").SingleOrDefault()!.Id.ToString();
-                reg.FechaRechazo = DateTime.Now;
-
-                var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == vm.Id).ToListAsync();
-
-                var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
-
-                foreach (var det in detalles)
-                {
-                    var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                    regPalet.Estado = newEstadoPalet.Id.ToString();
-
-                }
-            }
-            else if (operacion == "anular")
-            {
-                reg.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "anulado").SingleOrDefault()!.Id.ToString();
-                reg.FechaAnulado = DateTime.Now;
-
-                var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == vm.Id).ToListAsync();
-
-                var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
-
-                foreach (var det in detalles)
-                {
-                    var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                    regPalet.Estado = newEstadoPalet.Id.ToString();
-
-                }
-            }
-
-            if (vm.FotoFile != null)
-            {
-                reg.Foto = UploadImage(vm.FotoFile);
-            }
-
-
-            await _context.SaveChangesAsync();
-
-
-            // despues de actualizar el estado de la transferencia se envian las notificaciones correspondientes
-
-            var viewTrans = await _context.TransferenciasView!.Where(x => x.Id == vm.Id).SingleAsync();
-
-            if (operacion == "aceptar")
-            {
-                
-                await Utils.SendNotification(viewTrans.UserEnviaFirebaseToken,
-                                       viewTrans.UserEnviaEmail,
-                                       viewTrans.UserEnviaFullName,
-                                       "Transferencia aceptada",
-                                       "El usuario " + viewTrans.UserRecibeFullName +
-                                       " ha aceptado la transferencia con codigo '" +
-                                       viewTrans.CodigoInterno + "'");
-
-
-
-            }
-            else if (operacion == "rechazar")
-            {
-                
-                await Utils.SendNotification(viewTrans.UserEnviaFirebaseToken,
-                                       viewTrans.UserEnviaEmail,
-                                       viewTrans.UserEnviaFullName,
-                                       "Transferencia rechazada",
-                                       "El usuario " + viewTrans.UserRecibeFullName +
-                                       " ha rechazado la transferencia con codigo '" +
-                                       viewTrans.CodigoInterno + "'");
-
-            }
-
-
-
-            return true;
-
-        }
-        */
 
 
         private string UploadImage(IFormFile file)
@@ -986,6 +799,8 @@ namespace PaletsWebApp.Controllers
         }
     }
 }
+
+
 
 
 

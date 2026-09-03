@@ -114,36 +114,6 @@ namespace PaletsWebApp.Controllers
 
 
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public async Task<IActionResult> Index_old()
-        {
-
-            var usersx = await _context.UsersView!.ToListAsync();
-
-            var users = await _userManager.Users.ToListAsync();
-
-            var vm = users.Select(x => new UserVM()
-            {
-                Id = x.Id,
-                Nombres = x.Nombres,
-                Apellidos = x.Apellidos,
-                UserName = x.UserName,
-                Email = x.Email,
-            }).ToList();
-            
-            //assinging role
-            foreach(var user in vm)
-            {
-                var singleUser = await _userManager.FindByIdAsync(user.Id);
-                var role = await _userManager.GetRolesAsync(singleUser);
-                user.Role = role.FirstOrDefault();
-            }
-
-            return View(vm);
-        }
-
-
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> ResetPassword(string id)
@@ -730,4 +700,5 @@ namespace PaletsWebApp.Controllers
 
     }
 }
+
 

@@ -4,16 +4,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using PaletsWebApp.Data;
 using PaletsWebApp.Models;
 using PaletsWebApp.Utilites;
 using PaletsWebApp.ViewModels;
-using System;
 using System.Diagnostics;
-using System.Globalization;
-using System.Text.RegularExpressions;
-using X.PagedList;
 
 namespace PaletsWebApp.Controllers
 {
@@ -22,19 +17,16 @@ namespace PaletsWebApp.Controllers
     {
         private readonly ApplicationDbContext _context;
         public INotyfService _notification { get; }
-        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public PaletsController(ApplicationDbContext context,
                                 INotyfService notyfService,
-                                IWebHostEnvironment webHostEnvironment,
                                 UserManager<ApplicationUser> userManager,
                                 RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _notification = notyfService;
-            _webHostEnvironment = webHostEnvironment;
             _userManager = userManager;
             _roleManager = roleManager;
         }
@@ -141,45 +133,6 @@ namespace PaletsWebApp.Controllers
 
         }
 
-
-
-        [HttpGet]
-        public async Task<IActionResult> Index_old(int? page)
-        {
-
-            var listOfPalets = new List<Palet>();
-
-            var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == User.Identity!.Name);
-            var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] == WebsiteRoles.Admin)
-            {
-                listOfPalets = await _context.Palets!.Include(x => x.ApplicationUser).ToListAsync();
-            }
-            else
-            {
-                listOfPalets = await _context.Palets!.Include(x => x.ApplicationUser).Where(x => x.ApplicationUser!.Id == loggedInUser!.Id).ToListAsync();
-            }
-
-            var listEstados = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets").ToListAsync();
-
-            var listOfPaletsVM = listOfPalets.Select(x => new PaletVM()
-            {
-                Id = x.Id,
-                Descripcion = x.Descripcion ?? string.Empty,
-                FechaCreacion = x.FechaCreacion,
-                Observaciones = x.Observaciones,
-                Estado = listEstados.Where(y=>y.Id.ToString() == x.Estado).SingleOrDefault()!.Descripcion,
-                ApplicationUserId = x.ApplicationUserId, 
-                ApplicationUserName = x.ApplicationUser!.Nombres + " " + x.ApplicationUser.Apellidos
-            }).ToList();
-
-            int pageSize = 5;
-            int pageNumber = (page ?? 1);
-
-            var retList = await listOfPaletsVM.OrderByDescending(x => x.FechaCreacion).ToPagedListAsync(pageNumber, pageSize);
-
-            return View(retList);
-        }
 
         [HttpGet]
         public IActionResult Create()
@@ -385,5 +338,7 @@ namespace PaletsWebApp.Controllers
         }
     }
 }
+
+
 
 
