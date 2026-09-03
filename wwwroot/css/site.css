@@ -1,0 +1,193 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.card-header {
+    background-color: #f07d00 !important;
+}
+
+.btn-primary {
+    background-color: #f07d00 !important;
+    border-color: #f07d00 !important;
+}
+
+.btn-default, .btn-default:hover {
+    color: white !important;
+}
+
+.btn-outline-primary {
+    color: #f07d00 !important;
+    border-color: #f07d00 !important;
+}
+
+    .btn-outline-primary:hover {
+        color: white !important;
+        background-color: #f07d00 !important;
+        border-color: #f07d00 !important;
+    }
+
+.text-primary {
+    color: #6c757d!important;
+}
+
+.form-control:disabled, .form-control[readonly] {
+    background-color: white!important;
+    opacity: 1;
+}
+
+
+span.bfield {
+    display: inline-block;
+    font-weight: bold;
+}
+
+.d2-flex {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.btn-filter {
+    box-shadow: 1px 2px 5px #000000;
+    color:white;
+    float:right;
+}
+
+.dv-pager {
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.menu_ul li img {
+    display: block;
+    margin: 0 auto;
+}
+
+.menu_ul li a {
+    display: block;
+    margin: 0;
+    padding: 0;
+    color: #f07d00 !important;
+    font-weight:500;
+}
+
+.dv-ct-palets {
+    font-size: 12px;
+    color: white;
+    float: left;
+    margin-left: 10px;
+    margin-top: 9px;
+}
+
+
+@media only screen and (max-width: 600px) {
+    .itm-perfil {
+        margin-left: 0 !important;
+    }
+
+    .lnk-quitar-filtro {
+        display: inline-block !important;
+        float: left !important;
+        margin-top: 5px !important;
+        margin-bottom: 10px !important;
+        margin-left: 0px!important;
+    }
+
+    .menu-perfil {
+        margin-left: 1px !important;
+        padding-left: 5px !important;
+    }
+
+    .menu_ul li img, .bi-person {
+        display: none !important;
+    }
+
+    .menu_ul li a, .btn-logout {
+        font-size: 18px !important;
+    }
+    
+    img.logoTop {
+        width: 120px !important;
+        height: auto !important;
+    }
+
+    .dv-ct-palets {
+        margin:0px!important;
+    }
+
+    
+}
+
+.card-body {
+    padding: 0.5rem 0.5rem!important;
+}
+
+    .card-body .mb-4 {
+        margin-bottom: 0.7rem !important;
+    }
+
+
+.lnk-quitar-filtro {
+    float: left;
+    margin-left: 10px;
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+#myFilterCollapse {
+    padding:10px;
+}
+
+
+.menu-perfil {
+    margin-left: -50px;
+    top: 30px!important;
+    right: 0px!important;
+    padding-left:3px!important;
+}
+
+.dropdown-item.active, .dropdown-item:active {
+    color: #fff;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.btn-logout {
+    cursor: pointer !important;
+    padding: 0px;
+    color: #f07d00 !important;
+    font-weight: 500;
+}
+
+.dv-login {
+    text-align: center !important;
+    max-width: 450px!important;
+    width: 100%;
+    margin: auto;
+}
+
+button.aceptar-confirm {
+    background-color:green!important;
+}
+
+button.rechazar-confirm {
+    background-color: red !important;
+}
+
+.alert-ok, .alert-danger {
+    background-color:white!important;
+}

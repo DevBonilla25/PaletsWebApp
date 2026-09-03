@@ -1,0 +1,33 @@
+﻿{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:50657",
+      "sslPort": 44321
+    }
+  },
+  "profiles": {
+    "PaletsWebApp": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+
+      //Funciona de manera local, IDEAL API para dispositvos moviles
+      "applicationUrl": "http://10.10.10.20:7291;http://localhost:5071",
+
+      // FUNCIONA PARA LA WEB Y PRODUCCION
+      //"applicationUrl": "http://localhost:7291;http://localhost:5071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

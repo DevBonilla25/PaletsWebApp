@@ -1,0 +1,262 @@
+﻿@using PaletsWebApp.Utilites;
+
+@model PaginatedList<PaletsWebApp.Models.View_User>
+@{
+    ViewData["Title"] = "Lista de Usuarios";
+
+    string currFilterEstado = ViewData["filterEstado"]?.ToString() ?? "-1";
+    string currFilterRol = ViewData["filterRol"]?.ToString() ?? "-1";
+
+
+
+}
+
+<div class="container-fluid">
+
+    <a class="btn btn-primary mb-1" asp-action="Register" asp-controller="Users">
+        <span class="bi-plus" style="margin-right:5px; font-weight: bold; "></span>
+        Nuevo
+    </a>
+    <div class="card">
+
+        <div class="card-header bg-primary">
+            <div class="row">
+                <div class="col-8">
+                    <h4 class="card-title text-white">Usuarios</h4>
+                </div>
+                <div class="col-4 ">
+                    <button type="button" class="btn btn-default btn-filter" onclick="$('#myFilterCollapse').collapse('toggle');">
+                        <span class="bi-filter" style="margin-right:5px;"></span>Filtro
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="one collapse" id="myFilterCollapse">
+
+            <form asp-action="Index" method="get">
+
+                <input type="hidden" id="hd_show_filter" name="showFilter" />
+
+                <div class="row">
+
+                    <div class="col-6">
+                        <label>Nombre:</label>
+                        <input type="text" name="sUser" value="@ViewData["filterUser"]" class="form-control" autocomplete="off" />
+                    </div>
+
+                    <div class="col-6">
+                        <label>Rol</label>
+
+                        <select class="form-select" name="sRol" value="@ViewData["filterRol"]">
+                            @if (@currFilterRol == "-1")
+                            {
+                                <option value="-1" selected>-cualquiera-</option>
+                            }
+                            else
+                            {
+                                <option value="-1">-cualquiera-</option>
+                            }
+                            @if (@currFilterRol == "Admin")
+                            {
+                                <option value="Admin" selected>Admin</option>
+                            }
+                            else
+                            {
+                                <option value="Admin">Admin</option>
+                            }
+                            @if (@currFilterRol == "Cliente")
+                            {
+                                <option value="Cliente" selected>Cliente</option>
+                            }
+                            else
+                            {
+                                <option value="Cliente">Cliente</option>
+                            }
+                            @if (@currFilterRol == "Chofer")
+                            {
+                                <option value="Chofer" selected>Chofer</option>
+                            }
+                            else
+                            {
+                                <option value="Chofer">Chofer</option>
+                            }
+                            @if (@currFilterRol == "Bodeguero")
+                            {
+                                <option value="Bodeguero" selected>Bodeguero</option>
+                            }
+                            else
+                            {
+                                <option value="Bodeguero">Bodeguero</option>
+                            }
+
+
+                        </select>
+                    </div>
+
+
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Estado</label>
+
+                        <select class="form-select" name="sEstado" value="@ViewData["filterEstado"]">
+                            @if (@currFilterEstado == "-1")
+                            {
+                                <option value="-1" selected>-cualquiera-</option>
+                            }
+                            else
+                            {
+                                <option value="-1">-cualquiera-</option>
+                            }
+                            @if (@currFilterEstado == "true")
+                            {
+                                <option value="true" selected>Activo</option>
+                            }
+                            else
+                            {
+                                <option value="true">Activo</option>
+                            }
+                            @if (@currFilterEstado == "false")
+                            {
+                                <option value="false" selected>Inactivo</option>
+                            }
+                            else
+                            {
+                                <option value="false">Inactivo</option>
+                            }
+                            
+
+                        </select>
+                    </div>
+                    <div class="col-6 mt-3 text-center">
+
+
+
+                        <input type="submit"
+                               class="btn  btn-outline-primary"
+                               style="float: left; margin-left: 0px;"
+                               value="Aplicar Filtro" />
+
+                        <a asp-action="Index"
+                           class="lnk-quitar-filtro">Quitar Filtro</a>
+
+
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+
+        <div class="card-body" style="background-color:lightgray;">
+
+            @foreach (var usuario in Model)
+            {
+                <div class="rounded mb-4 bg-white p-2">
+                    <div class="row">
+
+                        <div class="one">
+                            <span style="font-size:1.1rem; font-weight:bolder;" class="text-primary fw-bold">@(usuario.Nombres + " " + usuario.Apellidos) </span><span style="font-size:12px;">(@usuario.RolName)</span>
+                        </div>
+
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+
+                            <label style="width: 110px;">Fecha creación:</label>
+                            <span class="bfield">@Utils.FormatDate(usuario.FechaCreacion)</span>
+
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label>Estatus:</label>
+                            <span class="badge @Utils.BadgeUser(@usuario.Activo)">
+                                @Utils.EstatusUser(@usuario.Activo)
+                                
+                            </span>
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label style="width: 110px; float:left;">UserName:</label>
+                            <span class="bfield">@usuario.UserName </span>
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label style="width: 60px; float:left;">Email:</label>
+                            <span class="bfield">@usuario.Email </span>
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label style="width: 110px; float:left;">Teléfono:</label>
+                            <span class="bfield">@usuario.Telefono </span>
+                        </div>
+
+
+                        <div class="one" style="padding-top: 15px;">
+                            
+                            <a class="btn btn-outline-primary"
+                                asp-controller="Users"
+                                asp-action="Editar"
+                                asp-route-id="@usuario.Id"
+                                method="post">
+                                Editar
+                            </a>
+
+                            <a class="btn btn-outline-info"
+                                asp-action="ResetPassword" 
+                                asp-controller="Users" 
+                                asp-route-id="@usuario.Id">Cambiar Contraseña</a>
+
+
+
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+        </div>
+
+
+
+    </div>
+</div>
+
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<div class="row dv-pager">
+
+    <div class="col-8">
+        <a asp-action="Index"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex - 1)"
+           asp-route-filterUser="@ViewData["filterUser"]"
+           asp-route-filterRol="@ViewData["filterRol"]"
+           asp-route-filterEstado="@ViewData["filterEstado"]"
+           class="btn btn-outline-primary @prevDisabled">
+            Anterior
+        </a>
+        <a asp-action="Index"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex + 1)"
+           asp-route-filterUser="@ViewData["filterUser"]"
+           asp-route-filterRol="@ViewData["filterRol"]"
+           asp-route-filterEstado="@ViewData["filterEstado"]"
+           class="btn btn-outline-primary @nextDisabled">
+            Siguiente
+        </a>
+    </div>
+
+    <div class="col-4">
+        Pagina @(Model.PageIndex) de @(Model.TotalPages)
+    </div>
+
+</div>
+

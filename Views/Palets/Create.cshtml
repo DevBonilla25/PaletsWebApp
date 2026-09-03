@@ -1,0 +1,61 @@
+﻿@model PaletsWebApp.ViewModels.PaletVM
+
+@{
+    ViewData["Title"] = "Crear Pallet";
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Palets">Regresar</a>
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h4 class="card-title text-white">Nuevo Pallet</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" asp-controller="Palets" enctype="multipart/form-data">
+               @* <div asp-validation-summary="ModelOnly" class="text-danger"></div>*@
+                <div class="row mb-2">
+                    <div class="col-12">
+                        <div class="mb-2">
+                            <label>Descripción</label>
+                            <input type="text" asp-for="Descripcion" class="form-control" />
+                            <span  asp-validation-for="Descripcion"  class="text-danger"></span>
+                        </div>
+                        <div class="mb-2">
+                            <label>Observaciones</label>
+                            <textarea id="richEditor" asp-for="Observaciones" class="form-control" rows="8"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
+
+                        
+                        <div class="mb-2">
+                            <label>Asignar para</label>
+
+                            @Html.DropDownListFor(m=> m.ApplicationUserId,new SelectList(Model.UserList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
+                            <span asp-validation-for="ApplicationUserId" class="text-danger"></span>
+                        </div>
+                        
+
+                    
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="one">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                id="btnAceptar">
+                                Guardar
+                        </button>
+
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+   
+}

@@ -1,0 +1,79 @@
+﻿@model PaletsWebApp.ViewModels.TransferenciaVM
+
+@{
+    ViewData["Title"] = "Crear Transferecia";
+    
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Transfers">Regresar</a>
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h4 class="card-title text-white">Nueva Transferencia</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" asp-controller="Transfers" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="row mb-2">
+                    <div class="col-9">
+                        <div class="mb-2">
+                            <label>Transferir para</label>
+
+                            @Html.DropDownListFor(m=> m.IdUserRecibe,new SelectList(Model.UserList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
+                            <span asp-validation-for="IdUserRecibe" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-9">
+                        <div class="mb-2">
+                            <input type="hidden" asp-for="JsonPalets" />
+                            <label>Seleccione los pallets a transferir</label>
+                            @if (ViewBag.PalletRequired)
+                            {
+                                <br />
+                                <label style="color:red;">Por lo menos un Pallet es requerido</label>
+                            }
+
+                            @foreach(var palet in Model.Palets!)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           value="@palet.Id"
+                                           id="check_@palet.Id"
+                                           name="UqChecked"
+                                           checked="@palet.IsSelected" />
+                                    <label class="form-check-label" for="check_@palet.Id">
+                                        @palet.Descripcion
+                                    </label>
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+                
+                <div class="mb-2">
+                            
+                    <div class="one">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                id="btnAceptar"
+                                name="submit" value="aceptar">
+                            Guardar
+                        </button>
+
+                    </div>
+                            
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+   
+}

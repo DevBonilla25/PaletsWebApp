@@ -1,0 +1,311 @@
+﻿@using PaletsWebApp.Utilites;
+
+@model PaginatedList<PaletsWebApp.Models.View_Transferencia>
+@{
+    ViewData["Title"] = "Lista de Transferencias";
+
+    string currFilterEstado = ViewData["filterEstado"]?.ToString() ?? "-1";
+
+    string estadoRecibido = (string)ViewBag.estadoRecibido;
+    string estadoReclamado = (string)ViewBag.estadoReclamado;
+    string estadoRechazado = (string)ViewBag.estadoRechazado;
+    string estadoAnulado = (string)ViewBag.estadoAnulado;
+
+}
+
+
+<!-- Bootstrap DatePicker -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.css" type="text/css" />
+<!-- Bootstrap DatePicker -->
+@section scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(function () {
+            $('#txtDate1').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                format: "dd/mm/yyyy",
+                language: "tr"
+            });
+            $('#txtDate2').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                format: "dd/mm/yyyy",
+                language: "tr"
+            });
+        });
+    </script>
+
+}
+
+<div class="container-fluid">
+
+    <a class="btn btn-primary mb-1" asp-action="Create" asp-controller="Transfers">
+        <span class="bi-plus" style="margin-right:5px; font-weight: bold; "></span>
+        Nuevo
+    </a>
+
+    
+    @if (ViewBag.CanReclaimPalets)
+    {
+        <a class="btn btn-primary mb-1" asp-action="Reclamar" asp-controller="Transfers">
+            <span class="bi-plus" style="margin-right:5px; font-weight: bold; "></span>
+            Reclamar Palets
+        </a>
+    }
+
+
+    <div class="card">
+
+        <div class="card-header bg-primary">
+            <div class="row">
+                <div class="col-8">
+                    <h4 class="card-title text-white">Transferencias</h4>
+                </div>
+                <div class="col-4 ">
+                    <button type="button" class="btn btn-default btn-filter" onclick="$('#myFilterCollapse').collapse('toggle');">
+                        <span class="bi-filter" style="margin-right:5px;"></span>Filtro
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="one collapse" id="myFilterCollapse">
+
+            <form asp-action="Index" method="get">
+            
+                <input type="hidden" id="hd_show_filter" name="showFilter" />
+
+                <div class="row">
+
+                    <div class="col-6">
+                        <label>Fecha envio desde:</label>
+                        <input type="text" id="txtDate1" name="sDate1" value="@ViewData["filterDate1"]" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="col-6">
+                        <label>Fecha envio hasta:</label>
+                        <input type="text" id="txtDate2" name="sDate2" value="@ViewData["filterDate2"]" class="form-control" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Usuario Envia:</label>
+                        <input type="text" name="sUserEnvia" value="@ViewData["filterUserEnvia"]" class="form-control" autocomplete="off" />
+                    </div>
+                    <div class="col-6">
+                        <label>Usuario Recibe:</label>
+                        <input type="text" name="sUserRecibe" value="@ViewData["filterUserRecibe"]" class="form-control" autocomplete="off" />
+                    </div>
+                
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Estado</label>
+
+                        <select class="form-select" name="sEstado" value="@ViewData["filterEstado"]">
+                            @if (@currFilterEstado == "-1")
+                            {
+                                <option value="-1" selected>-cualquiera-</option>
+                            }
+                            else
+                            {
+                                <option value="-1">-cualquiera-</option>
+                            }
+                            @if (@currFilterEstado == "4")
+                            {
+                                <option value="4" selected>Por recibir</option>
+                            }
+                            else
+                            {
+                                <option value="4">Por recibir</option>
+                            }
+                            @if (@currFilterEstado == "5")
+                            {
+                                <option value="5" selected>Recibido</option>
+                            }
+                            else
+                            {
+                                <option value="5">Recibido</option>
+                            }
+                            @if (@currFilterEstado == "6")
+                            {
+                                <option value="6" selected>Rechazado</option>
+                            }
+                            else
+                            {
+                                <option value="6">Rechazado</option>
+                            }
+                            @if (@currFilterEstado == "12")
+                            {
+                                <option value="12" selected>Por reclamar</option>
+                            }
+                            else
+                            {
+                                <option value="12">Por reclamar</option>
+                            }
+
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        
+                        <label>Palet en transferencias:</label>
+                        <input type="text" name="sPalet" value="@ViewData["filterPalet"]" class="form-control" autocomplete="off" />
+
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mt-3 text-center">
+                        
+
+                        <input type="submit"
+                               class="btn  btn-outline-primary"
+                               style="float: left; margin-left: 0px;"
+                               value="Aplicar Filtro" />
+
+                        <a asp-action="Index"
+                           class="lnk-quitar-filtro">Quitar Filtro</a>
+                    
+                    
+                    </div>
+                   
+
+                </div>
+
+
+            </form>
+
+        </div>
+    
+        <div class="card-body" style="background-color:lightgray;">
+
+            @foreach (var transfer in Model)
+            {
+                <div class="rounded mb-4 bg-white p-2">
+                    <div class="row">
+
+                        <div class="one">
+                            <span style="font-size:1.1rem; font-weight:bolder;" class="text-primary fw-bold">@transfer.CodigoInterno</span>
+                        </div>
+
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+
+                            <label style="width: 110px;">Fecha envio:</label>
+                            <span class="bfield">@Utils.FormatDate(@transfer.FechaEnvio)</span>
+
+                            @if (transfer.Estado == estadoRecibido || transfer.Estado == estadoReclamado )
+                            {
+                                <br />
+
+                                <label style="width: 110px;">Fecha recibido:</label>
+                                <span class="bfield">@Utils.FormatDate(@transfer.FechaRecibo)</span>
+
+                                
+                            }
+
+                            @if (transfer.Estado == estadoRechazado)
+                            {
+                                <br />
+                                <label style="width: 110px;">Fecha rechazo:</label>
+                                <span class="bfield">@Utils.FormatDate(@transfer.FechaRechazo)</span>
+
+                                <br />
+                            }
+
+
+                            @if (transfer.Estado == estadoAnulado)
+                            {
+                                <br />
+                                <label style="width: 110px;">Fecha anulación:</label>
+                                <span class="bfield">@Utils.FormatDate(@transfer.FechaAnulado)</span>
+
+                                <br />
+                            }
+
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label>Estatus:</label>
+                            <span class="badge @Utils.BadgeTransfer(@transfer.DescEstado!)">@transfer.DescEstado</span>
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label style="width: 110px; float:left;">Usuario envia:</label>
+                            <span class="bfield">@transfer.UserEnviaFullName</span>
+                        </div>
+
+                        <div class="col-6 d2-flex justify-content-center flex-column">
+                            <label>Usuario recibe:</label>
+                            <span class="bfield">@transfer.UserRecibeFullName</span>
+                        </div>
+
+                        <div class="one" style="padding-top: 15px;">
+                            <a class="btn btn-outline-primary"
+                           asp-controller="Transfers"
+                           asp-action="Detalle"
+                           asp-route-id="@transfer.Id"
+                               method="post">
+                                Detalles
+                            </a>
+
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+        </div>
+
+
+
+    </div>
+</div>
+
+
+@{
+    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+}
+
+<div class="row dv-pager">
+    
+    <div class="col-8">
+        <a asp-action="Index"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex - 1)"
+           asp-route-filterDate1="@ViewData["filterDate1"]"
+           asp-route-filterDate2="@ViewData["filterDate2"]"
+           asp-route-filterUserEnvia="@ViewData["filterUserEnvia"]"
+           asp-route-filterUserRecibe="@ViewData["filterUserRecibe"]"
+           asp-route-filterEstado="@ViewData["filterEstado"]"
+           class="btn btn-outline-primary @prevDisabled">
+            Anterior
+        </a>
+        <a asp-action="Index"
+           asp-route-sortOrder="@ViewData["CurrentSort"]"
+           asp-route-pageNumber="@(Model.PageIndex + 1)"
+           asp-route-filterDate1="@ViewData["filterDate1"]"
+           asp-route-filterDate2="@ViewData["filterDate2"]"
+           asp-route-filterUserEnvia="@ViewData["filterUserEnvia"]"
+           asp-route-filterUserRecibe="@ViewData["filterUserRecibe"]"
+           asp-route-filterEstado="@ViewData["filterEstado"]"
+           class="btn btn-outline-primary @nextDisabled">
+            Siguiente
+        </a>
+    </div>
+
+    <div class="col-4">
+        Pagina @(Model.PageIndex) de @(Model.TotalPages)
+    </div>
+
+</div>
+
+
+
+
+

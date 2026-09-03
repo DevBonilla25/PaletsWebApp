@@ -1,0 +1,190 @@
+﻿@model PaletsWebApp.ViewModels.RegisterUserVM
+
+@{
+    ViewData["Title"] = "Editar Usuario";
+
+    bool isValidRol = Model.Rol != null ? true : false;
+    bool isValidDocument = Model.TipoDocumento != null ? true : false;
+
+}
+
+<div class="container-fluid">
+    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Users">Regresar</a>
+    <div class="card">
+        <div class="card-header bg-primary">
+            <h4 class="card-title text-white">Editar Usuario</h4>
+        </div>
+        <div class="card-body">
+            
+             <form asp-action="Editar" asp-controller="Users">
+
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row">
+
+                    <div class="col-6">
+                        <div class="mb-2">
+
+                            @if (string.IsNullOrEmpty(@Model.Nombres))
+                            {
+                                <label style="color:red;">Nombres <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Nombres</label>
+                            }
+
+                            <input type="text" asp-for="Nombres" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="Nombres" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="mb-2">
+                            
+                            @if (string.IsNullOrEmpty(@Model.Apellidos))
+                            {
+                                <label style="color:red;">Apellidos <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Apellidos</label>
+                            }
+
+                            <input type="text" asp-for="Apellidos" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="Apellidos" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-2">
+                           
+                            @if (string.IsNullOrEmpty(@Model.TipoDocumento))
+                            {
+                                <label style="color:red;">Tipo de documento <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Tipo de documento</label>
+                            }
+
+                            @Html.DropDownListFor(m=> m.TipoDocumento,new SelectList(Model.TiposDocumentosList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
+                            <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="mb-2">
+
+                            @if (string.IsNullOrEmpty(@Model.Documento))
+                            {
+                                <label style="color:red;">Documento <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Documento</label>
+                            }
+
+                            <input type="text" asp-for="Documento" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="Documento" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label>Email</label>
+                            <input type="text" asp-for="Email" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="Email" autocomplete="off" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <label>Teléfono</label>
+                            <input type="text" asp-for="Telefono" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-12">
+                        <div class="mb-2">
+                            <label>Dirección</label>
+                            <textarea id="richEditor" asp-for="Direccion" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Direccion" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-12">
+                        <div class="mb-2">
+                            <label>Razon Social</label>
+
+                            <input type="text" asp-for="RazonSocial" autocomplete="off" class="form-control" />
+                            <span asp-validation-for="RazonSocial" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-6">
+                        <div class="mb-2">
+                            @if (string.IsNullOrEmpty(@Model.Rol))
+                            {
+                                <label style="color:red;">Rol <i>(requerido)</i></label>
+                            }
+                            else
+                            {
+                                <label>Rol</label>
+                            }
+                            @Html.DropDownListFor(m=> m.Rol,new SelectList(Model.RolesList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
+                            <span asp-validation-for="Rol" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="mb-2">
+
+                            <label class="form-check-label">
+
+                                @Html.CheckBoxFor(x => x.Activo, Model.Activo)
+                                Activo
+                            </label>
+                            <span asp-validation-for="Activo"  class="text-danger"></span>
+
+                        </div>
+                    </div>
+
+                </div>
+               
+
+                <div class="mb-2">
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="btnAceptar"
+                            name="submit" value="aceptar">
+                        Guardar
+                    </button>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
