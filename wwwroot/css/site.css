@@ -191,3 +191,32 @@ button.rechazar-confirm {
 .alert-ok, .alert-danger {
     background-color:white!important;
 }
+
+.claim-card { border: 0; box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .08); }
+.claim-header { align-items: center; display: flex; gap: .75rem; padding: .85rem 1rem; }
+.claim-header small { color: rgba(255, 255, 255, .85); }
+.claim-back { align-items: center; background: rgba(255, 255, 255, .2); border-radius: 50%; color: #fff; display: flex; font-size: 1.35rem; height: 2.25rem; justify-content: center; text-decoration: none; width: 2.25rem; }
+.claim-back:hover { background: rgba(255, 255, 255, .3); color: #fff; }
+.claim-body { padding: 1.25rem !important; }
+.claim-section-title { font-size: 1rem; font-weight: 700; }
+.claim-search .form-control { min-height: 42px; }
+.claim-results-heading { align-items: center; display: flex; justify-content: space-between; margin: 1rem 0 .5rem; }
+.claim-results-list { display: grid; gap: .5rem; }
+.claim-result { align-items: center; border: 1px solid #e2e6ea; border-radius: .5rem; display: flex; justify-content: space-between; padding: .7rem .8rem; }
+.claim-result-info { display: flex; flex-direction: column; gap: .15rem; }
+.claim-result-info .badge { align-self: flex-start; }
+.claim-result-blocked { align-items: flex-start; background: #f8f9fa; flex-direction: column; }
+.claim-blocked-message { color: #856404; }
+.claim-empty-state { align-items: center; background: #f8f9fa; border-radius: .5rem; color: #6c757d; display: flex; gap: .5rem; padding: 1rem; }
+.claim-empty-icon { font-size: 1.2rem; }
+.claim-summary { background: #f8f9fa; border: 1px solid #e2e6ea; border-radius: .65rem; padding: 1rem; position: sticky; top: 1rem; }
+.claim-summary-heading { align-items: center; display: flex; gap: .5rem; justify-content: space-between; margin-bottom: .75rem; }
+.claim-selected-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+.claim-selected-item { align-items: center; background: #fff; border: 1px solid #f07d00; border-radius: 2rem; display: inline-flex; gap: .45rem; padding: .35rem .4rem .35rem .7rem; }
+.claim-remove { align-items: center; background: #f07d00; border: 0; border-radius: 50%; color: #fff; display: flex; font-size: 1rem; height: 1.35rem; justify-content: center; line-height: 1; padding: 0; width: 1.35rem; }
+.claim-selection-empty { color: #6c757d; font-size: .9rem; padding: .75rem 0; }
+.claim-actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
+
+@media only screen and (max-width: 991px) {
+    .claim-summary { position: static; }
+}

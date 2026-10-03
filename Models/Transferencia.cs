@@ -10,6 +10,7 @@ namespace PaletsWebApp.Models
         public DateTime FechaRecibo { get; set; }
         public DateTime FechaRechazo { get; set; }
         public DateTime FechaAnulado { get; set; }
+        public DateTime? FechaLimiteAceptacion { get; set; }
 
         public string? ApplicationUserIdEnvia { get; set; }
      

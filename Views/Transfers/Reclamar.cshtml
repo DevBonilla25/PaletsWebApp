@@ -1,80 +1,213 @@
-﻿@model PaletsWebApp.ViewModels.TransferenciaVM
+@model PaletsWebApp.ViewModels.TransferenciaVM
+@using System.Text.Json
 
 @{
-    ViewData["Title"] = "Crear Reclamo";
-
+    ViewData["Title"] = "Reclamar Pallets";
+    var resultados = ViewBag.ResultadosBusqueda as List<PaletsWebApp.ViewModels.PaletVM>
+        ?? new List<PaletsWebApp.ViewModels.PaletVM>();
+    var terminoBusqueda = ViewData["filterDescripcion"]?.ToString();
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Transfers">Regresar</a>
-    <div class="card">
-
-        <div class="card-header bg-primary">
-            <div class="row">
-                <div class="col-8">
-                    <h4 class="card-title text-white">Reclamar Palets</h4>
-                </div>
+<div class="container-fluid claim-page">
+    <div class="card claim-card">
+        <div class="card-header claim-header">
+            <a asp-action="Index" asp-controller="Transfers" class="claim-back" aria-label="Regresar">
+                <span aria-hidden="true">&larr;</span>
+            </a>
+            <div>
+                <h4 class="mb-0 text-white">Reclamar pallets</h4>
+                <small>Registra los pallets que recibiste o retiraste.</small>
             </div>
-
         </div>
 
-     
-
-        <div class="card-body">
-            <form asp-action="Reclamar" method="get">
-                <input type="hidden" id="selectedPaletsJson" name="selectedPaletsJson" value="@Model.JsonPalets" />
-                <div class="col-6 mb-2">
-                    <label for="sDescripcion">Buscar Palet:</label>
-                    <input type="text" name="sDescripcion" value="@ViewData["filterDescripcion"]" class="form-control" autocomplete="off" />
-                </div>
-                <div class="mb-2">
-                    <button type="submit" class="btn btn-outline-primary">Aplicar Filtro</button>
-                    <a asp-action="Reclamar" class="btn btn-outline-secondary">Quitar Filtro</a>
-                </div>
-            </form>
-
-            <br />
-            <!-- Pallets seleccionados -->
-            <h5>Pallets seleccionados:</h5>
-            <form asp-action="Reclamar" asp-controller="Transfers" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="JsonPalets" value="@Model.JsonPalets" />
-                @if (Model.Palets != null && Model.Palets.Any())
-                {
-                    @foreach (var palet in Model.Palets)
-                    {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox"
-                                   value="@palet.Id"
-                                   id="check_@palet.Id"
-                                   name="UqChecked"
-                            @(palet.IsSelected ? "checked" : "") />
-                            <label class="form-check-label" for="check_@palet.Id">
-                                @palet.Descripcion
-                            </label>
+        <div class="card-body claim-body">
+            <div class="row g-4">
+                <section class="col-12 col-lg-7" aria-labelledby="searchTitle">
+                    <h5 id="searchTitle" class="claim-section-title">Buscar pallets</h5>
+                    <form asp-action="Reclamar" method="get" id="claimSearchForm">
+                        <input type="hidden" id="selectedPaletIds" name="selectedPaletIds"
+                               value="@string.Join(",", Model.Palets.Select(x => x.Id))" />
+                        <div class="input-group claim-search">
+                            <input id="sDescripcion" type="search" name="sDescripcion"
+                                   value="@terminoBusqueda" class="form-control"
+                                   placeholder="Ejemplo: Palet 99" autocomplete="off" autofocus />
+                            <button type="submit" class="btn btn-primary">Buscar</button>
                         </div>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(terminoBusqueda))
+                    {
+                        <div class="claim-results-heading">
+                            <span>Resultados para <strong>@terminoBusqueda</strong></span>
+                            <button type="button" class="btn btn-link btn-sm" id="clearClaimSearch">Limpiar</button>
+                        </div>
+
+                        @if (resultados.Any())
+                        {
+                            <div class="claim-results-list">
+                                @foreach (var palet in resultados)
+                                {
+                                    bool yaReclamado = string.Equals(palet.DescEstado, "Reclamado", StringComparison.OrdinalIgnoreCase);
+                                    bool esCorreccion = palet.EsCorreccionCustodia;
+                                    <article class="claim-result">
+                                        <div class="claim-result-info">
+                                            <strong>@palet.Descripcion</strong>
+                                            <small>@(palet.ApplicationUserName ?? "Responsable sin identificar")</small>
+                                            <span class="badge @(yaReclamado ? "bg-primary" : "bg-success")">@palet.DescEstado</span>
+                                        </div>
+                                        @if (yaReclamado)
+                                        {
+                                            <small class="claim-blocked-message">
+                                                Actualmente está en poder de @(palet.ApplicationUserName ?? "otro usuario").
+                                                Puedes incluirlo en este reclamo.
+                                            </small>
+                                        }
+                                        @if (esCorreccion)
+                                        {
+                                            <small class="text-warning-emphasis">
+                                                Transferencia pendiente hacia
+                                                @(palet.ReceptorTransferenciaPendiente ?? "otro usuario").
+                                                Se enviará a revisión administrativa.
+                                            </small>
+                                        }
+                                        <button type="button" class="btn btn-outline-primary btn-sm add-claim-pallet"
+                                                data-palet-id="@palet.Id">
+                                            @(palet.IsSelected ? "Agregado" : esCorreccion ? "Reportar posesión" : "Agregar")
+                                        </button>
+                                    </article>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="claim-empty-state">
+                                <span class="claim-empty-icon" aria-hidden="true">&#128269;</span>
+                                <p class="mb-0">No se encontraron pallets con esa descripción.</p>
+                            </div>
+                        }
                     }
-                }
-                else
-                {
-                    <p>No hay pallets disponibles para reclamar.</p>
-                }
+                </section>
 
-                <button type="submit" class="btn btn-primary" id="btnReclamar" name="submit" value="reclamar">Reclamar</button>
-            </form>
+                <section class="col-12 col-lg-5" aria-labelledby="summaryTitle">
+                    <form asp-action="Reclamar" asp-controller="Transfers" method="post"
+                          id="claimSubmitForm" class="claim-summary">
+                        <div class="claim-summary-heading">
+                            <h5 id="summaryTitle" class="claim-section-title mb-0">Seleccionados</h5>
+                            <span class="badge bg-secondary" id="selectedPalletCount">@Model.Palets.Count</span>
+                        </div>
 
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+                        <input type="hidden" id="claimSelectionJson" name="JsonPalets" value="@Model.JsonPalets" />
+                        <div id="selectedPalletList" class="claim-selected-list"></div>
 
+                        <div class="mt-3">
+                            <label asp-for="Observaciones" class="form-label">Motivo del reclamo</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3"
+                                      placeholder="Indica dónde recibiste o retiraste los pallets."></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
 
-
-
+                        <div class="claim-actions">
+                            <a asp-action="Index" asp-controller="Transfers" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary" id="btnReclamar">Enviar reclamo</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
         </div>
-
-
     </div>
 </div>
 
-
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const searchResults = @Html.Raw(JsonSerializer.Serialize(resultados));
+            let selectedPallets = @Html.Raw(JsonSerializer.Serialize(Model.Palets));
+            const selectedList = document.getElementById('selectedPalletList');
+            const selectedCount = document.getElementById('selectedPalletCount');
+            const submitButton = document.getElementById('btnReclamar');
 
+            // Sincroniza la lista visual con los campos enviados al buscar o crear el reclamo.
+            function updateState() {
+                selectedPallets.forEach(item => item.IsSelected = true);
+                document.getElementById('claimSelectionJson').value = JSON.stringify(selectedPallets);
+                document.getElementById('selectedPaletIds').value = selectedPallets.map(item => item.Id).join(',');
+                selectedCount.textContent = selectedPallets.length;
+                submitButton.disabled = selectedPallets.length === 0;
+
+                document.querySelectorAll('.add-claim-pallet').forEach(button => {
+                    const selected = selectedPallets.some(item => item.Id === Number(button.dataset.paletId));
+                    button.disabled = selected;
+                    button.textContent = selected ? 'Agregado' : 'Agregar';
+                });
+            }
+
+            // Redibuja la selección acumulada y crea un UqChecked por cada pallet.
+            function renderSelection() {
+                selectedList.replaceChildren();
+
+                if (selectedPallets.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'claim-selection-empty';
+                    empty.textContent = 'Aún no has agregado pallets.';
+                    selectedList.appendChild(empty);
+                }
+
+                selectedPallets.forEach(pallet => {
+                    const item = document.createElement('div');
+                    item.className = 'claim-selected-item';
+
+                    const description = document.createElement('span');
+                    description.textContent = pallet.Descripcion;
+                    item.appendChild(description);
+
+                    const remove = document.createElement('button');
+                    remove.type = 'button';
+                    remove.className = 'claim-remove';
+                    remove.setAttribute('aria-label', `Quitar ${pallet.Descripcion}`);
+                    remove.textContent = '×';
+                    remove.addEventListener('click', () => {
+                        selectedPallets = selectedPallets.filter(current => current.Id !== pallet.Id);
+                        renderSelection();
+                    });
+                    item.appendChild(remove);
+
+                    const hiddenId = document.createElement('input');
+                    hiddenId.type = 'hidden';
+                    hiddenId.name = 'UqChecked';
+                    hiddenId.value = pallet.Id;
+                    item.appendChild(hiddenId);
+                    selectedList.appendChild(item);
+                });
+
+                updateState();
+            }
+
+            document.querySelectorAll('.add-claim-pallet').forEach(button => {
+                button.addEventListener('click', () => {
+                    const pallet = searchResults.find(item => item.Id === Number(button.dataset.paletId));
+                    if (pallet && !selectedPallets.some(current => current.Id === pallet.Id)) {
+                        selectedPallets.push(pallet);
+                        renderSelection();
+                    }
+                });
+            });
+
+            document.getElementById('claimSearchForm').addEventListener('submit', updateState);
+
+            const clearSearch = document.getElementById('clearClaimSearch');
+            if (clearSearch) {
+                clearSearch.addEventListener('click', () => {
+                    updateState();
+                    const url = new URL('@Url.Action("Reclamar", "Transfers")', window.location.origin);
+                    const ids = document.getElementById('selectedPaletIds').value;
+                    if (ids) url.searchParams.set('selectedPaletIds', ids);
+                    window.location.href = url.toString();
+                });
+            }
+
+            renderSelection();
+        })();
+    </script>
 }

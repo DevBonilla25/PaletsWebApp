@@ -23,6 +23,7 @@ namespace PaletsWebApp.ViewModels
         public string IdUserRecibe { get; set; } = string.Empty;
 
         public string? NombreUserRecibe { get; set; }
+        public string? NombreUsuariosResuelven { get; set; }
         public string? Estado { get; set; }
         public string? DescEstado { get; set; }
         public string? Foto { get; set; }

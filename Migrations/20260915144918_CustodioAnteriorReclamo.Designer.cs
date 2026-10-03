@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PaletsWebApp.Data;
 
@@ -11,9 +12,10 @@ using PaletsWebApp.Data;
 namespace PaletsWebApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260915144918_CustodioAnteriorReclamo")]
+    partial class CustodioAnteriorReclamo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -357,9 +359,6 @@ namespace PaletsWebApp.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaEnvio")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaLimiteAceptacion")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaRechazo")

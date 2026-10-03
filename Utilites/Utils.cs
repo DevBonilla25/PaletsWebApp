@@ -27,6 +27,8 @@ namespace PaletsWebApp.Utilites
             else if (cad.ToLower() == "recibido" || cad.ToLower() == "reclamado") { ret = "bg-success"; }
             else if (cad.ToLower() == "rechazado") { ret = "bg-danger"; }
             else if (cad.ToLower() == "anulado") { ret = "bg-danger"; }
+            else if (cad.ToLower() == "procesado parcialmente") { ret = "bg-warning text-dark"; }
+            else { ret = "bg-primary"; }
 
             return ret;
 
@@ -102,7 +104,7 @@ namespace PaletsWebApp.Utilites
         {
 
             string resPush = "";
-            string resEmail = "";
+            // string resEmail = "";
 
             if (!string.IsNullOrEmpty(deviceId))
             {
@@ -110,7 +112,8 @@ namespace PaletsWebApp.Utilites
             }
 
 
-            resEmail = SendEmailNotification(email,nombre,titulo, mensaje);
+            // Envío temporalmente deshabilitado: el SMTP síncrono retrasaba la respuesta al usuario.
+            // resEmail = SendEmailNotification(email,nombre,titulo, mensaje);
 
         
         }

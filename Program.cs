@@ -7,6 +7,7 @@ using PaletsWebApp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PaletsWebApp.Utilites;
+using PaletsWebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+// La web y la API reutilizan la misma consulta paginada de transferencias.
+builder.Services.AddScoped<TransferenciaQueryService>();
+builder.Services.AddScoped<DetalleTransferenciaService>();
+builder.Services.AddScoped<ReclamoService>();
+builder.Services.AddScoped<TransferenciaVencidaService>();
+builder.Services.AddHostedService<TransferenciasVencidasWorker>();
 
 builder.Services.AddNotyf(config => { config.DurationInSeconds = 10; config.IsDismissable = true; config.Position = NotyfPosition.BottomRight; });
 

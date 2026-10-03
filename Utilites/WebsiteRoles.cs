@@ -7,5 +7,6 @@
         public const string? Cliente = "Cliente";
         public const string? Bodeguero = "Bodeguero";
         public const string? Chofer = "Chofer";
+        public const string? Supervisor = "Supervisor";
     }
 }

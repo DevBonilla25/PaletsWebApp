@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PaletsWebApp.Data;
 using PaletsWebApp.Models;
+using PaletsWebApp.Services;
 using PaletsWebApp.Utilites;
 using PaletsWebApp.ViewModels;
 using System.Diagnostics;
+using System.Data;
 using System.Text.Json;
 
 namespace PaletsWebApp.Controllers
@@ -18,22 +20,31 @@ namespace PaletsWebApp.Controllers
         public INotyfService _notification { get; }
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly TransferenciaQueryService _transferenciaQueryService;
+        private readonly DetalleTransferenciaService _detalleTransferenciaService;
+        private readonly ReclamoService _reclamoService;
 
         public ApiController(ApplicationDbContext context,
                              INotyfService notyfService,
                              UserManager<ApplicationUser> userManager,
-                             RoleManager<IdentityRole> roleManager)
+                             RoleManager<IdentityRole> roleManager,
+                             TransferenciaQueryService transferenciaQueryService,
+                             DetalleTransferenciaService detalleTransferenciaService,
+                             ReclamoService reclamoService)
         {
             _context = context;
             _notification = notyfService;
             _userManager = userManager;
             _roleManager = roleManager;
+            _transferenciaQueryService = transferenciaQueryService;
+            _detalleTransferenciaService = detalleTransferenciaService;
+            _reclamoService = reclamoService;
         }
 
 
         [HttpGet]
         [Route("api/ApiAccess/Login")]
-        public async Task<ActionResult<RegisterUserVM>> Login(string user, 
+        public async Task<IActionResult> Login(string user,
                                                               string password, 
                                                               string firebaseToken)
         {
@@ -47,7 +58,7 @@ namespace PaletsWebApp.Controllers
 
                 if (regUser == null)
                 {
-                    return Problem("Usuario no existe.");
+                    return Unauthorized(ApiResponse.Failed("Usuario o contraseña incorrectos.", "INVALID_CREDENTIALS"));
                 }
 
                 if (regUser != null)
@@ -55,13 +66,14 @@ namespace PaletsWebApp.Controllers
 
                     if (regUser.Activo == false)
                     {
-                        return Problem("Cuenta no se ha activado aun");
+                        return StatusCode(StatusCodes.Status403Forbidden,
+                            ApiResponse.Failed("La cuenta todavía no ha sido activada.", "ACCOUNT_INACTIVE"));
                     }
 
                     var verifyPassword = await _userManager.CheckPasswordAsync(regUser, password);
                     if (!verifyPassword)
                     {
-                        return Problem("Contraseña invalida");
+                        return Unauthorized(ApiResponse.Failed("Usuario o contraseña incorrectos.", "INVALID_CREDENTIALS"));
                     }
 
                     var roles = await _userManager.GetRolesAsync(regUser!);
@@ -90,23 +102,24 @@ namespace PaletsWebApp.Controllers
                     
                 }
                 else
-                    return Problem("Usuario no existe.");
+                    return Unauthorized(ApiResponse.Failed("Usuario o contraseña incorrectos.", "INVALID_CREDENTIALS"));
 
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return Problem(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Ocurrió un error inesperado al iniciar sesión.", "LOGIN_ERROR"));
             }
 
-            return CreatedAtAction("Login", new { id =vm.Id }, vm);
+            return Ok(ApiResponse.Succeeded(vm, "Inicio de sesión exitoso."));
 
         }
 
         // Devuelve la lusta de todos los usuarios
         [HttpGet]
         [Route("api/ApiAccess/GetUsers")]
-        public async Task<ActionResult<RegisterUserVM>> GetUsers(string userId)
+        public async Task<IActionResult> GetUsers(string userId)
         {
 
             List<RegisterUserVM> lista = new List<RegisterUserVM>();
@@ -136,12 +149,13 @@ namespace PaletsWebApp.Controllers
                 lista = await Usuarios.ToListAsync();
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return Problem(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Ocurrió un error al consultar los usuarios.", "USERS_QUERY_ERROR"));
             }
 
-            return CreatedAtAction("GetUsers", lista);
+            return Ok(ApiResponse.Succeeded(lista, "Usuarios obtenidos con éxito."));
 
         }
 
@@ -150,7 +164,7 @@ namespace PaletsWebApp.Controllers
         // Esta consulta devuelve a un usuario enviado por parametro Id
         [HttpGet]
         [Route("api/ApiAccess/GetUserById")]
-        public async Task<ActionResult<RegisterUserVM>> GetUserById(string userId)
+        public async Task<IActionResult> GetUserById(string userId)
         {
             RegisterUserVM? usuario = null;
 
@@ -178,16 +192,17 @@ namespace PaletsWebApp.Controllers
                 // Si no se encuentra el usuario, retornar un mensaje 404
                 if (usuario == null)
                 {
-                    return NotFound($"Usuario con id {userId} no encontrado.");
+                    return NotFound(ApiResponse.Failed("El usuario no existe.", "USER_NOT_FOUND"));
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return Problem(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Ocurrió un error al consultar el usuario.", "USER_QUERY_ERROR"));
             }
 
             // Retornar el usuario encontrado
-            return Ok(usuario);
+            return Ok(ApiResponse.Succeeded(usuario, "Usuario obtenido con éxito."));
         }
 
 
@@ -196,18 +211,19 @@ namespace PaletsWebApp.Controllers
         // Este codigo llama las primeras 10 datos de palets por Usario, haciendo paginado
         [HttpGet]
         [Route("api/ApiAccess/GetPaletsByUser")]
-        public async Task<ActionResult<List<PaletVM>>> getPaletsByUserId(string userId, string searchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> getPaletsByUserId(string userId, string searchTerm, int page = 1, int pageSize = 10)
         {
 
             var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == userId);
 
             if (loggedInUser == null)
-                return Problem("Usuario no existe");
+                return NotFound(ApiResponse.Failed("El usuario no existe.", "USER_NOT_FOUND"));
 
             var Palets = from s in _context.PaletsView select s;
 
             var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] != WebsiteRoles.Admin)
+            if (!loggedInUserRole.Contains(WebsiteRoles.Admin) &&
+                !loggedInUserRole.Contains(WebsiteRoles.Supervisor))
             {
                 Palets = from s in Palets
                          where s.ApplicationUserId == loggedInUser!.Id
@@ -241,7 +257,7 @@ namespace PaletsWebApp.Controllers
             }).ToList();
 
 
-            return CreatedAtAction("GetPalets", listOfPaletsVM);
+            return Ok(ApiResponse.Succeeded(listOfPaletsVM, "Pallets obtenidos con éxito."));
 
         }
 
@@ -249,7 +265,7 @@ namespace PaletsWebApp.Controllers
         // Este codigo llama las primeras 10 datos de la lista TOTAL de palets, haciendo paginado
         [HttpGet]
         [Route("api/ApiAccess/GetAllPalets")]
-        public ActionResult<List<PaletVM>> getAllPalets(string searchTerm, int page = 1, int pageSize = 10)
+        public IActionResult getAllPalets(string searchTerm, int page = 1, int pageSize = 10)
         {
 
             var Palets = from s in _context.PaletsView select s;
@@ -281,7 +297,7 @@ namespace PaletsWebApp.Controllers
                 }).ToList();
 
 
-            return CreatedAtAction("GetPalets", listOfPaletsVM);
+            return Ok(ApiResponse.Succeeded(listOfPaletsVM, "Pallets obtenidos con éxito."));
 
         }
 
@@ -291,41 +307,29 @@ namespace PaletsWebApp.Controllers
 
 
 
-        // Este codigo llama las primeras 10 datos de la transferencia haciendo paginado
+        // Devuelve a la app una página usando la misma consulta y ordenamiento que la web.
         [HttpGet]
         [Route("api/ApiAccess/GetTransfers")]
-        public async Task<ActionResult<List<TransferenciaVM>>> GetTransfers(string userId, string searchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetTransfers(string userId, string searchTerm, int page = 1, int pageSize = 10)
         {
             var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == userId);
 
             if (loggedInUser == null)
-                return Problem("Usuario no existe");
-
-            var Transfers = from s in _context.TransferenciasView select s;
+                return NotFound(ApiResponse.Failed("El usuario no existe.", "USER_NOT_FOUND"));
 
             var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] != WebsiteRoles.Admin)
+            // La API conserva su DTO y respuesta JSON; el servicio comparte solo la consulta.
+            var result = await _transferenciaQueryService.GetPageAsync(new TransferenciaQuery
             {
-                Transfers = from s in Transfers
-                            where s.ApplicationUserIdEnvia == loggedInUser!.Id ||
-                                  s.ApplicationUserIdRecibe == loggedInUser!.Id
-                            select s;
-            }
+                UserId = loggedInUser.Id,
+                IsAdmin = loggedInUserRole.Contains(WebsiteRoles.Admin) ||
+                          loggedInUserRole.Contains(WebsiteRoles.Supervisor),
+                SearchTerm = searchTerm,
+                Page = page,
+                PageSize = pageSize
+            }, includeTotalCount: false);
 
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                Transfers = from s in Transfers
-                            where s.UserEnviaFullName!.Contains(searchTerm) ||
-                                  s.UserRecibeFullName!.Contains(searchTerm) ||
-                                  s.DescEstado!.Contains(searchTerm)
-                            select s;
-            }
-
-            var listOfTransferVM = Transfers
-                .OrderByDescending(x => x.FechaEnvio)
-                .Skip((page - 1) * pageSize)  // Saltar los registros anteriores
-                .Take(pageSize)  // Tomar solo el número de registros según pageSize
-                .Select(x => new TransferenciaVM()
+            var listOfTransferVM = result.Items.Select(x => new TransferenciaVM
                 {
                     Id = x.Id,
                     CodigoInterno = x.CodigoInterno!,
@@ -343,7 +347,7 @@ namespace PaletsWebApp.Controllers
                     NombreUserRecibe = x.UserRecibeFullName!,
                 }).ToList();
 
-            return CreatedAtAction("GetTransfers", listOfTransferVM);
+            return Ok(ApiResponse.Succeeded(listOfTransferVM, "Transferencias obtenidas con éxito."));
         }
 
 
@@ -351,25 +355,46 @@ namespace PaletsWebApp.Controllers
 
         [HttpGet]
         [Route("api/ApiAccess/GetTransferById")]
-        public async Task<ActionResult<TransferenciaVM>> GetTransferById(int id)
+        public async Task<IActionResult> GetTransferById(int id)
         {
 
             var reg = await _context.TransferenciasView!.Where(x => x.Id == id).SingleOrDefaultAsync();
-            var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == id).ToListAsync();
-
-            var ll = from dr in detalles
-                     from dp in _context.Palets!
-                     where dr.IdPalet == dp.Id
-                     select new PaletVM
-                     {
-                         Id = dp.Id,
-                         Descripcion = dp.Descripcion!,
-                     };
+            if (reg == null)
+            {
+                return NotFound(ApiResponse.Failed("La transferencia no existe.", "TRANSFER_NOT_FOUND"));
+            }
+            var palets = await (from detalle in _context.Detalles!.AsNoTracking()
+                                join palet in _context.Palets!.AsNoTracking()
+                                    on detalle.IdPalet equals palet.Id
+                                join estado in _context.Catalogos!.AsNoTracking()
+                                    on detalle.Estado equals estado.Id.ToString() into estados
+                                from estado in estados.DefaultIfEmpty()
+                                where detalle.IdTransferencia == id
+                                select new PaletVM
+                                {
+                                    Id = palet.Id,
+                                    Descripcion = palet.Descripcion!,
+                                    EstadoDetalle = detalle.Estado,
+                                    DescEstadoDetalle = estado != null ? estado.Descripcion : null,
+                                    FechaEstadoDetalle = detalle.FechaEstado,
+                                    ObservacionesDetalle = detalle.Observaciones,
+                                    IdDetalleOrigen = detalle.IdDetalleOrigen,
+                                    ApplicationUserIdResuelveDetalle = detalle.ApplicationUserIdResuelve
+                                }).ToListAsync();
+            var idsUsuariosResuelven = palets
+                .Select(x => x.ApplicationUserIdResuelveDetalle)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToList();
+            var nombresUsuariosResuelven = await _userManager.Users.AsNoTracking()
+                .Where(x => idsUsuariosResuelven.Contains(x.Id))
+                .Select(x => (x.Nombres + " " + x.Apellidos).Trim())
+                .ToListAsync();
 
 
             var regVM = new TransferenciaVM
             {
-                Id = reg!.Id,
+                Id = reg.Id,
                 CodigoInterno = reg.CodigoInterno,
                 DescEstado = reg.DescEstado,
                 Estado = reg.Estado,
@@ -381,13 +406,14 @@ namespace PaletsWebApp.Controllers
                 IdUserRecibe = reg.ApplicationUserIdRecibe!,
                 NombreUserEnvia = reg.UserEnviaFullName!,
                 NombreUserRecibe = reg.UserRecibeFullName!,
+                NombreUsuariosResuelven = string.Join(", ", nombresUsuariosResuelven),
                 Observaciones = reg.Observaciones,
                 Foto = reg.Foto,
-                Palets = ll.ToList()
+                Palets = palets
             };
 
            
-            return CreatedAtAction("GetTransferById", regVM);
+            return Ok(ApiResponse.Succeeded(regVM, "Transferencia obtenida con éxito."));
 
         }
 
@@ -395,7 +421,7 @@ namespace PaletsWebApp.Controllers
 
         [HttpGet]
         [Route("api/ApiAccess/GetTransferByPallet")]
-        public async Task<ActionResult<TransferenciaVM>> GetTransferByPallet(int Id)
+        public async Task<IActionResult> GetTransferByPallet(int Id)
         {
 
 
@@ -425,7 +451,7 @@ namespace PaletsWebApp.Controllers
                 .ToListAsync();
 
 
-            return CreatedAtAction("GetTransferByPallet", listOfTransferVM);
+            return Ok(ApiResponse.Succeeded(listOfTransferVM, "Transferencias del pallet obtenidas con éxito."));
 
         }
 
@@ -525,15 +551,30 @@ namespace PaletsWebApp.Controllers
         
         [HttpPost]
         [Route("api/ApiAccess/AddTransfer")]
-        public async Task<ActionResult<string>> AddTransfer(TransferenciaVM regVM)
+        public async Task<IActionResult> AddTransfer(TransferenciaVM regVM)
         {
             var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
-            var defaultEstado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por recibir").SingleOrDefault();
+            var regUserDestino = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserRecibe);
+            var regUserEnvia = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
+            if (regUserDestino == null || regUserEnvia == null)
+            {
+                return NotFound(ApiResponse.Failed(
+                    "El usuario de envío o recepción no existe.", "TRANSFER_USER_NOT_FOUND"));
+            }
+            var defaultEstado = listEstadosTrans.SingleOrDefault(x =>
+                x.Descripcion!.ToLower() == "por recibir");
+            if (defaultEstado == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Failed(
+                    "No está configurado el estado 'por recibir'.",
+                    "TRANSFER_STATE_NOT_CONFIGURED"));
+            }
 
             var reg = new Transferencia();
 
             reg.CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss");
             reg.FechaEnvio = DateTime.UtcNow;
+            reg.FechaLimiteAceptacion = DateTime.UtcNow.AddHours(48);
             reg.ApplicationUserIdEnvia = regVM.IdUserEnvia;
             reg.ApplicationUserIdRecibe = regVM.IdUserRecibe;
             reg.Estado = defaultEstado!.Id.ToString();
@@ -555,83 +596,174 @@ namespace PaletsWebApp.Controllers
 
             var list_palets = JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets!) ?? new List<int>();
             var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
+            var estadoDetallePendiente = await _detalleTransferenciaService
+                .GetEstadoIdAsync(DetalleTransferenciaEstados.Pendiente);
 
-            foreach (var pal in list_palets)
-            {
-                var detalle = new Detalle
+            var idsPalets = list_palets.Distinct().ToList();
+            var palets = await _context.Palets!
+                .Where(x => idsPalets.Contains(x.Id))
+                .ToListAsync();
+            var detalles = idsPalets.Select(idPalet => new Detalle
                 {
-                    IdPalet = pal,
-                    IdTransferencia = reg.Id
-                };
-                await _context.Detalles!.AddAsync(detalle);
+                    IdPalet = idPalet,
+                    IdTransferencia = reg.Id,
+                    Estado = estadoDetallePendiente,
+                    FechaEstado = DateTime.UtcNow
+                })
+                .ToList();
 
-                var regPalet = await _context.Palets!.Where(x => x.Id == pal).SingleAsync();
-                regPalet.Estado = newEstadoPalet.Id.ToString();
+            await _context.Detalles!.AddRangeAsync(detalles);
+            foreach (var palet in palets)
+            {
+                palet.Estado = newEstadoPalet.Id.ToString();
             }
 
             await _context.SaveChangesAsync();
 
-            var regUserDestino = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserRecibe);
-            var regUserEnvia = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
-
-            if (regUserDestino == null || regUserEnvia == null)
-                return BadRequest("Usuarios de envío o recepción no encontrados.");
-
             string fullNameUserDestino = regUserDestino.Nombres + " " + regUserDestino.Apellidos;
 
             await Utils.SendNotification(
-                regUserDestino.FirebaseToken,
-                regUserDestino.Email ?? string.Empty,
-                fullNameUserDestino,
-                "Has recibido una transferencia",
-                "El usuario " + regUserEnvia.Nombres + " " + regUserEnvia.Apellidos + " te ha realizado la transferencia con codigo '" + reg.CodigoInterno + "'"
-            );
+                    regUserDestino.FirebaseToken,
+                    regUserDestino.Email ?? string.Empty,
+                    fullNameUserDestino,
+                    "Has recibido una transferencia",
+                    "El usuario " + regUserEnvia.Nombres + " " + regUserEnvia.Apellidos + " te ha realizado la transferencia con codigo '" + reg.CodigoInterno + "'"
+                );
 
-            return CreatedAtAction("AddTransfer", "Ok, Transferencia se genero con exito");
+            return CreatedAtAction("AddTransfer", ApiResponse.Succeeded(
+                new { transferenciaId = reg.Id, fechaLimiteAceptacion = reg.FechaLimiteAceptacion },
+                "Transferencia creada con éxito."));
         }
 
 
 
         [HttpPost]
         [Route("api/ApiAccess/AddReclamo")]
-        public async Task<ActionResult<string>> AddReclamo(TransferenciaVM regVM)
+        public async Task<IActionResult> AddReclamo(TransferenciaVM regVM)
         {
-            var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
-            var defaultEstado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por reclamar").SingleOrDefault();
-
-            var reg = new Transferencia();
-
-            reg.CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss");
-            reg.FechaEnvio = DateTime.UtcNow;
-            reg.ApplicationUserIdEnvia = regVM.IdUserEnvia;
-            reg.ApplicationUserIdRecibe = "Administradores"; ;
-            reg.Estado = defaultEstado!.Id.ToString();
-
-           
-            await _context.Transferencias!.AddAsync(reg);
-            await _context.SaveChangesAsync();
-
-
-            var list_palets = JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets!) ?? new List<int>();
-            var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en reclamo").SingleAsync();
-
-            foreach (var pal in list_palets)
+            var usuario = await _userManager.Users.SingleOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
+            if (usuario == null)
             {
-                var detalle = new Detalle
-                {
-                    IdPalet = pal,
-                    IdTransferencia = reg.Id
-                };
-                await _context.Detalles!.AddAsync(detalle);
-
-                var regPalet = await _context.Palets!.Where(x => x.Id == pal).SingleAsync();
-                regPalet.Estado = newEstadoPalet.Id.ToString();
+                return NotFound(ApiResponse.Failed(
+                    "El usuario que crea el reclamo no existe.", "USER_NOT_FOUND"));
             }
 
-            await _context.SaveChangesAsync();
-            var regUserEnvia = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == regVM.IdUserEnvia);
+            var rolesPermitidos = new[] { WebsiteRoles.Admin, WebsiteRoles.Bodeguero, WebsiteRoles.Chofer };
+            var rolesUsuario = await _userManager.GetRolesAsync(usuario);
+            if (!rolesUsuario.Any(x => rolesPermitidos.Contains(x)))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Failed(
+                    "El usuario no tiene permiso para crear reclamos.", "CLAIM_FORBIDDEN"));
+            }
 
-            return CreatedAtAction("AddReclamo", new { message = "Reclamo creado con éxito.", transferenciaId = reg.Id });
+            List<int> idsPalets;
+            try
+            {
+                idsPalets = (JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets ?? "[]") ?? new List<int>())
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList();
+            }
+            catch (JsonException)
+            {
+                return BadRequest(ApiResponse.Failed(
+                    "La lista de pallets no tiene un formato válido.", "INVALID_PALLET_LIST"));
+            }
+
+            if (idsPalets.Count == 0)
+            {
+                return BadRequest(ApiResponse.Failed(
+                    "Debe seleccionar por lo menos un pallet.", "PALLETS_REQUIRED"));
+            }
+
+            var estados = await _context.Catalogos!
+                .Where(x => (x.Categoria == "estado_transferencia" &&
+                             x.Descripcion!.ToLower() == "por reclamar") ||
+                            (x.Categoria == "estado_palets" &&
+                             x.Descripcion!.ToLower() == "dado de baja"))
+                .ToListAsync();
+            var estadoPorReclamar = estados.SingleOrDefault(x =>
+                x.Categoria == "estado_transferencia" && x.Descripcion!.ToLower() == "por reclamar");
+            var estadoDadoBaja = estados.SingleOrDefault(x =>
+                x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "dado de baja");
+            if (estadoPorReclamar == null || estadoDadoBaja == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Failed(
+                    "No están configurados los estados necesarios para crear el reclamo.",
+                    "CLAIM_STATES_NOT_CONFIGURED"));
+            }
+
+            // La validación y el cambio de estado deben ser atómicos para impedir reclamos simultáneos.
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            var palets = await _context.Palets!.Where(x => idsPalets.Contains(x.Id)).ToListAsync();
+            if (palets.Count != idsPalets.Count)
+            {
+                return NotFound(ApiResponse.Failed(
+                    "Uno o más pallets no existen.", "PALLET_NOT_FOUND"));
+            }
+
+            // Cualquier estado operativo admite reclamos; solo se excluyen pallets propios o dados de baja.
+            var noDisponibles = palets.Where(x =>
+                x.ApplicationUserId == usuario.Id ||
+                x.Estado == estadoDadoBaja.Id.ToString()).ToList();
+            if (noDisponibles.Count > 0)
+            {
+                var idsResponsables = noDisponibles.Select(x => x.ApplicationUserId).Where(x => x != null).ToList();
+                var responsables = await _userManager.Users
+                    .Where(x => idsResponsables.Contains(x.Id))
+                    .ToDictionaryAsync(x => x.Id, x => (x.Nombres + " " + x.Apellidos).Trim());
+                var detalle = string.Join(", ", noDisponibles.Select(x =>
+                    $"{x.Descripcion} ({(responsables.TryGetValue(x.ApplicationUserId ?? string.Empty, out var nombre) ? nombre : "responsable no identificado")})"));
+                return Conflict(ApiResponse.Failed(
+                    $"No puedes reclamar pallets propios o dados de baja: {detalle}.",
+                    "PALLET_NOT_AVAILABLE"));
+            }
+
+            var estadoDetallePendiente = await _detalleTransferenciaService
+                .GetEstadoIdAsync(DetalleTransferenciaEstados.Pendiente);
+            var reclamosDuplicados = await (from detalle in _context.Detalles!
+                                        join transferencia in _context.Transferencias!
+                                            on detalle.IdTransferencia equals transferencia.Id
+                                        where idsPalets.Contains(detalle.IdPalet) &&
+                                              (detalle.Estado == estadoDetallePendiente || detalle.Estado == string.Empty) &&
+                                              transferencia.ApplicationUserIdEnvia == usuario.Id &&
+                                              transferencia.ApplicationUserIdRecibe == "Administradores"
+                                        select detalle.IdPalet).Distinct().ToListAsync();
+            if (reclamosDuplicados.Count > 0)
+            {
+                return Conflict(ApiResponse.Failed(
+                    "Ya tienes un reclamo pendiente para uno o más pallets seleccionados.",
+                    "DUPLICATE_PENDING_CLAIM"));
+            }
+
+            var reg = new Transferencia
+            {
+                CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss"),
+                FechaEnvio = DateTime.UtcNow,
+                ApplicationUserIdEnvia = usuario.Id,
+                ApplicationUserIdRecibe = "Administradores",
+                Estado = estadoPorReclamar.Id.ToString(),
+                Observaciones = regVM.Observaciones
+            };
+
+            await _context.Transferencias!.AddAsync(reg);
+            await _context.SaveChangesAsync();
+            await _context.Detalles!.AddRangeAsync(palets.Select(x => new Detalle
+            {
+                IdPalet = x.Id,
+                IdTransferencia = reg.Id,
+                Estado = estadoDetallePendiente,
+                FechaEstado = DateTime.UtcNow,
+                EstadoPaletAnterior = x.Estado,
+                ApplicationUserIdCustodioAnterior = x.ApplicationUserId
+            }));
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            await _reclamoService.NotificarSupervisoresAsync(usuario, reg.Id);
+
+            return CreatedAtAction("AddReclamo", ApiResponse.Succeeded(
+                new { transferenciaId = reg.Id },
+                "Reclamo creado con éxito."));
         }
 
 
@@ -657,11 +789,12 @@ namespace PaletsWebApp.Controllers
             try
             {
                 string token = await Utils.GetAccessToken();
-                return Ok(new { accessToken = token });
+                return Ok(ApiResponse.Succeeded(new { accessToken = token }, "Token obtenido con éxito."));
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error al obtener el token de Firebase");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Error al obtener el token de Firebase.", "FIREBASE_TOKEN_ERROR"));
             }
         }
 
@@ -669,6 +802,7 @@ namespace PaletsWebApp.Controllers
         // PROCESO CON RECLAMO
         [HttpPost]
         [Route("api/ApiAccess/ProcessTransfer")]
+        [Consumes("application/json")]
         public async Task<IActionResult> ProcessTransfer([FromBody] ImageTransferModel imageTransferModel)
         {
 
@@ -680,72 +814,89 @@ namespace PaletsWebApp.Controllers
 
                 string operacion = imageTransferModel.Estado;
 
-                var regTrans = await _context.Transferencias!.Where(x => x.Id == imageTransferModel.TransferenciaId).SingleAsync();
+                var regTrans = await _context.Transferencias!
+                    .SingleOrDefaultAsync(x => x.Id == imageTransferModel.TransferenciaId);
+                if (regTrans == null)
+                {
+                    return NotFound(ApiResponse.Failed(
+                        "La transferencia no existe.", "TRANSFER_NOT_FOUND"));
+                }
+
                 regTrans!.Observaciones = imageTransferModel.Observaciones;
 
                 // Verificar si la transferencia ya está anulada
                 var estadoAnulado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "anulado")?.Id.ToString();
+                var estadoPorReclamar = listEstadosTrans.Single(x => x.Descripcion!.ToLower() == "por reclamar").Id.ToString();
+                var esReclamo = regTrans.Estado == estadoPorReclamar;
+                var usuarioProcesa = await _userManager.Users
+                    .SingleOrDefaultAsync(x => x.Id == imageTransferModel.IdUserProcesa);
+                if (usuarioProcesa == null)
+                {
+                    return Unauthorized(ApiResponse.Failed(
+                        "No se pudo identificar al usuario que procesa la transferencia.",
+                        "PROCESSING_USER_REQUIRED"));
+                }
+                var esAdmin = await _userManager.IsInRoleAsync(usuarioProcesa, WebsiteRoles.Admin!) ||
+                              await _userManager.IsInRoleAsync(usuarioProcesa, WebsiteRoles.Supervisor!);
+                var puedeProcesar = esReclamo
+                    ? esAdmin
+                    : regTrans.ApplicationUserIdRecibe == usuarioProcesa.Id;
+                if (!puedeProcesar)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Failed(
+                        "El usuario no tiene permiso para procesar esta transferencia.",
+                        "TRANSFER_PROCESS_FORBIDDEN"));
+                }
                 if (regTrans.Estado == estadoAnulado)
                 {
                     // Salir de la operación si la transferencia ya fue anulada
-                    return BadRequest("La transferencia ya ha sido anulada y no puede ser procesada.");
+                    return Conflict(ApiResponse.Failed(
+                        "La transferencia ya fue anulada y no puede procesarse.",
+                        "TRANSFER_ALREADY_CANCELLED"));
                 }
 
-
+                if (operacion != "aceptar" && operacion != "rechazar")
+                {
+                    return BadRequest(ApiResponse.Failed(
+                        "La operación debe ser aceptar o rechazar.", "INVALID_TRANSFER_OPERATION"));
+                }
                 if (operacion == "aceptar")
                 {
-                    if (regTrans.Estado == listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por reclamar").SingleOrDefault()!.Id.ToString())
+                    if (esReclamo)
                     {
-                        // Es un reclamo
-                        regTrans.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "reclamado").SingleOrDefault()!.Id.ToString();
-                        regTrans.FechaRecibo = DateTime.UtcNow;
-
-                        var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
-                        var newEstadoPalet = await _context.Catalogos!
-                            .Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "reclamado")
-                            .SingleAsync();
-
-                        foreach (var det in detalles)
-                        {
-                            var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                            regPalet.Estado = newEstadoPalet.Id.ToString();
-                            regPalet.ApplicationUserId = regTrans.ApplicationUserIdEnvia;
-                        }
+                        await _reclamoService.AdjudicarAsync(
+                            imageTransferModel.TransferenciaId,
+                            usuarioProcesa.Id,
+                            imageTransferModel.Observaciones);
 
                     }
                     else
                     {
                         // Procesamiento normal para transferencias
-                        regTrans.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "recibido").SingleOrDefault()!.Id.ToString();
-                        regTrans.FechaRecibo = DateTime.UtcNow;
-
                         // Obtener todos los detalles de la transferencia
-                        var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
+                        var detalles = await _detalleTransferenciaService
+                            .GetPendientesAsync(imageTransferModel.TransferenciaId);
+                        var idsPalets = detalles.Select(x => x.IdPalet).ToList();
+                        var palets = await _context.Palets!.Where(x => idsPalets.Contains(x.Id)).ToListAsync();
                         var newEstadoPalet = await _context.Catalogos!
                             .Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible")
                             .SingleAsync();
+                        var estadoDetalle = await _detalleTransferenciaService
+                            .GetEstadoIdAsync(DetalleTransferenciaEstados.Recibido);
 
-                        var estadoReclamado = await _context.Catalogos!
-                            .Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "reclamado")
-                            .SingleOrDefaultAsync();
-
-                        foreach (var det in detalles)
+                        foreach (var regPalet in palets)
                         {
-                            var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-
-                            // Validar si el pallet está en estado "Reclamado"
-                            if (estadoReclamado != null && regPalet.Estado == estadoReclamado.Id.ToString())
-                            {
-                                // Registrar que el pallet no puede ser asignado porque ya fue reclamado
-                                _notification.Success($"El {regPalet.Descripcion} ya fue reclamado, por lo tanto, no se te fue asignado");
-                                continue; // Pasar al siguiente pallet
-                            }
-
-                            // Si el pallet no está reclamado, asignarlo al usuario receptor
+                            // Una transferencia aceptada inicia una custodia nueva, aunque antes estuviera reclamado.
                             regPalet.Estado = newEstadoPalet.Id.ToString();
                             regPalet.ApplicationUserId = regTrans.ApplicationUserIdRecibe;
 
                         }
+                        DetalleTransferenciaService.CambiarEstado(
+                            detalles,
+                            estadoDetalle,
+                            usuarioProcesa.Id,
+                            imageTransferModel.Observaciones);
+                        await _detalleTransferenciaService.RecalcularCabecerasAsync(new[] { regTrans.Id });
 
                     }
 
@@ -755,14 +906,51 @@ namespace PaletsWebApp.Controllers
                     regTrans.Estado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "rechazado").SingleOrDefault()!.Id.ToString();
                     regTrans.FechaRechazo = DateTime.UtcNow;
 
-                    var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
+                    var detalles = await _detalleTransferenciaService
+                        .GetPendientesAsync(imageTransferModel.TransferenciaId);
 
                     var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
+                    var estadoPaletEnTransferencia = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
+                    var estadoDetalle = await _detalleTransferenciaService
+                        .GetEstadoIdAsync(DetalleTransferenciaEstados.Rechazado);
+                    var idsPalets = detalles.Select(x => x.IdPalet).ToList();
+                    var palets = await _context.Palets!.Where(x => idsPalets.Contains(x.Id)).ToListAsync();
+                    var idsOrigen = detalles.Where(x => x.IdDetalleOrigen.HasValue)
+                        .Select(x => x.IdDetalleOrigen!.Value).ToList();
+                    var detallesOrigen = await _context.Detalles!
+                        .Where(x => idsOrigen.Contains(x.Id)).ToListAsync();
+                    var palletsConOrigen = detalles.Where(x => x.IdDetalleOrigen.HasValue)
+                        .Select(x => x.IdPalet).ToHashSet();
 
-                    foreach (var det in detalles)
+                    if (!esReclamo)
+                    foreach (var regPalet in palets)
                     {
-                        var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                        regPalet.Estado = newEstadoPalet.Id.ToString();
+                        var detalle = detalles.First(x => x.IdPalet == regPalet.Id);
+                        regPalet.Estado = esReclamo && !string.IsNullOrWhiteSpace(detalle.EstadoPaletAnterior)
+                            ? detalle.EstadoPaletAnterior
+                            : palletsConOrigen.Contains(regPalet.Id)
+                                ? estadoPaletEnTransferencia.Id.ToString()
+                                : newEstadoPalet.Id.ToString();
+                        if (esReclamo)
+                            regPalet.ApplicationUserId = detalle.ApplicationUserIdCustodioAnterior;
+                    }
+                    DetalleTransferenciaService.CambiarEstado(
+                        detalles,
+                        estadoDetalle,
+                        usuarioProcesa.Id,
+                        imageTransferModel.Observaciones);
+                    if (!esReclamo && detallesOrigen.Count > 0)
+                    {
+                        var estadoPendiente = await _detalleTransferenciaService
+                            .GetEstadoIdAsync(DetalleTransferenciaEstados.Pendiente);
+                        DetalleTransferenciaService.CambiarEstado(
+                            detallesOrigen, estadoPendiente, usuarioProcesa.Id, imageTransferModel.Observaciones);
+                        await _detalleTransferenciaService.RecalcularCabecerasAsync(
+                            detallesOrigen.Select(x => x.IdTransferencia));
+                    }
+                    if (!esReclamo)
+                    {
+                        await _detalleTransferenciaService.RecalcularCabecerasAsync(new[] { regTrans.Id });
                     }
 
                 }
@@ -804,19 +992,21 @@ namespace PaletsWebApp.Controllers
                 }
 
 
-                return StatusCode(StatusCodes.Status201Created);
+                var message = operacion == "aceptar"
+                    ? "Transferencia aceptada con éxito."
+                    : "Transferencia rechazada con éxito.";
+                return Ok(ApiResponse.Succeeded(null, message));
 
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status400BadRequest);
+                return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Failed(
+                    "Ocurrió un error inesperado al procesar la transferencia.",
+                    "TRANSFER_PROCESSING_ERROR"));
             }
 
 
         }
-
-
-
 
         //PROCESA LA TRANSFERENCIA CON IMAGEN CUANDO EL USUARIO RECIBE [ORIGINAL]   NO RECLAMOS   
 
@@ -834,16 +1024,45 @@ namespace PaletsWebApp.Controllers
                 var listEstadosTrans = _context.Catalogos!.Where(x => x.Categoria == "estado_transferencia").ToList();
                 
                 // Obtener el registro de la transferencia
-                var regTrans = await _context.Transferencias!.Where(x => x.Id == imageTransferModel.TransferenciaId).SingleAsync();
+                var regTrans = await _context.Transferencias!
+                    .SingleOrDefaultAsync(x => x.Id == imageTransferModel.TransferenciaId);
+                if (regTrans == null)
+                {
+                    return NotFound(ApiResponse.Failed(
+                        "La transferencia no existe.", "TRANSFER_NOT_FOUND"));
+                }
 
                 // Verificar si el estado es "aceptado" o "rechazado"
                 //var estadoAnulado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "anulado")?.Id.ToString();
-                var estadoAceptado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "aceptado")?.Id.ToString();
+                var estadoAceptado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "recibido")?.Id.ToString();
                 var estadoRechazado = listEstadosTrans.SingleOrDefault(x => x.Descripcion!.ToLower() == "rechazado")?.Id.ToString();
+                var estadoPorReclamar = listEstadosTrans.Single(x => x.Descripcion!.ToLower() == "por reclamar").Id.ToString();
+                var esReclamo = regTrans.Estado == estadoPorReclamar;
+                var usuarioProcesa = await _userManager.Users
+                    .SingleOrDefaultAsync(x => x.Id == imageTransferModel.IdUserProcesa);
+                if (usuarioProcesa == null)
+                {
+                    return Unauthorized(ApiResponse.Failed(
+                        "No se pudo identificar al usuario que anula la transferencia.",
+                        "PROCESSING_USER_REQUIRED"));
+                }
+                var esAdmin = await _userManager.IsInRoleAsync(usuarioProcesa, WebsiteRoles.Admin!) ||
+                              await _userManager.IsInRoleAsync(usuarioProcesa, WebsiteRoles.Supervisor!);
+                var puedeAnular = esReclamo
+                    ? regTrans.ApplicationUserIdEnvia == usuarioProcesa.Id
+                    : regTrans.ApplicationUserIdEnvia == usuarioProcesa.Id || esAdmin;
+                if (!puedeAnular)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Failed(
+                        "El usuario no tiene permiso para anular esta transferencia.",
+                        "TRANSFER_CANCEL_FORBIDDEN"));
+                }
 
                 if (regTrans.Estado == estadoAceptado || regTrans.Estado == estadoRechazado)
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, "La transferencia ya ha sido procesada y no se puede anular.");
+                    return Conflict(ApiResponse.Failed(
+                        "La transferencia ya fue procesada y no puede anularse.",
+                        "TRANSFER_ALREADY_PROCESSED"));
                 }
 
                 // Actualizar el estado a "anulado" y agregar la observación
@@ -852,25 +1071,64 @@ namespace PaletsWebApp.Controllers
                 regTrans.FechaAnulado = DateTime.UtcNow;
 
                 // Actualizar el estado de los pallets asociados a "disponible"
-                var detalles = await _context.Detalles!.Where(x => x.IdTransferencia == imageTransferModel.TransferenciaId).ToListAsync();
+                var detalles = await _detalleTransferenciaService
+                    .GetPendientesAsync(imageTransferModel.TransferenciaId);
 
                 var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "disponible").SingleAsync();
+                var estadoPaletEnTransferencia = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
+                var estadoDetalle = await _detalleTransferenciaService
+                    .GetEstadoIdAsync(DetalleTransferenciaEstados.Anulado);
+                var idsPalets = detalles.Select(x => x.IdPalet).ToList();
+                var palets = await _context.Palets!.Where(x => idsPalets.Contains(x.Id)).ToListAsync();
+                var idsOrigen = detalles.Where(x => x.IdDetalleOrigen.HasValue)
+                    .Select(x => x.IdDetalleOrigen!.Value).ToList();
+                var detallesOrigen = await _context.Detalles!
+                    .Where(x => idsOrigen.Contains(x.Id)).ToListAsync();
+                var palletsConOrigen = detalles.Where(x => x.IdDetalleOrigen.HasValue)
+                    .Select(x => x.IdPalet).ToHashSet();
 
-                foreach (var det in detalles)
+                if (!esReclamo)
+                foreach (var regPalet in palets)
                 {
-                    var regPalet = await _context.Palets!.Where(x => x.Id == det.IdPalet).SingleAsync();
-                    regPalet.Estado = newEstadoPalet.Id.ToString();
+                    var detalle = detalles.First(x => x.IdPalet == regPalet.Id);
+                    regPalet.Estado = esReclamo && !string.IsNullOrWhiteSpace(detalle.EstadoPaletAnterior)
+                        ? detalle.EstadoPaletAnterior
+                        : palletsConOrigen.Contains(regPalet.Id)
+                            ? estadoPaletEnTransferencia.Id.ToString()
+                            : newEstadoPalet.Id.ToString();
+                    if (esReclamo)
+                        regPalet.ApplicationUserId = detalle.ApplicationUserIdCustodioAnterior;
+                }
+                DetalleTransferenciaService.CambiarEstado(
+                    detalles,
+                    estadoDetalle,
+                    usuarioProcesa.Id,
+                    imageTransferModel.Observaciones);
+                if (!esReclamo && detallesOrigen.Count > 0)
+                {
+                    var estadoPendiente = await _detalleTransferenciaService
+                        .GetEstadoIdAsync(DetalleTransferenciaEstados.Pendiente);
+                    DetalleTransferenciaService.CambiarEstado(
+                        detallesOrigen, estadoPendiente, usuarioProcesa.Id, imageTransferModel.Observaciones);
+                    await _detalleTransferenciaService.RecalcularCabecerasAsync(
+                        detallesOrigen.Select(x => x.IdTransferencia));
+                }
+                if (!esReclamo)
+                {
+                    await _detalleTransferenciaService.RecalcularCabecerasAsync(new[] { regTrans.Id });
                 }
 
                 await _context.SaveChangesAsync();
 
 
-                return StatusCode(StatusCodes.Status201Created);
+                return Ok(ApiResponse.Succeeded(null, "Transferencia anulada con éxito."));
 
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status400BadRequest);
+                return StatusCode(StatusCodes.Status500InternalServerError, ApiResponse.Failed(
+                    "Ocurrió un error inesperado al anular la transferencia.",
+                    "TRANSFER_CANCELLATION_ERROR"));
             }
 
 
@@ -880,7 +1138,7 @@ namespace PaletsWebApp.Controllers
 
         [HttpGet]
         [Route("api/ApiAccess/GetCatalogoByCategory")]
-        public async Task<ActionResult<List<CatalogoVM>>> GetCatalogoByCategory(string cat)
+        public async Task<IActionResult> GetCatalogoByCategory(string cat)
         {
 
             List<CatalogoVM> lista = new List<CatalogoVM>();
@@ -902,18 +1160,19 @@ namespace PaletsWebApp.Controllers
                 lista = await listado.ToListAsync();
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return Problem(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Ocurrió un error al consultar el catálogo.", "CATALOG_QUERY_ERROR"));
             }
 
-            return CreatedAtAction("GetCatalogoByCategory", lista);
+            return Ok(ApiResponse.Succeeded(lista, "Catálogo obtenido con éxito."));
 
         }
 
         [HttpGet]
         [Route("api/ApiAccess/GetRoles")]
-        public async Task<ActionResult<RolVM>> GetRoles()
+        public async Task<IActionResult> GetRoles()
         {
 
             List<RolVM> lista = new List<RolVM>();
@@ -931,29 +1190,30 @@ namespace PaletsWebApp.Controllers
                 lista = await lstRoles.ToListAsync();
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return Problem(ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    ApiResponse.Failed("Ocurrió un error al consultar los roles.", "ROLES_QUERY_ERROR"));
             }
 
-            return CreatedAtAction("GetRoles", lista);
+            return Ok(ApiResponse.Succeeded(lista, "Roles obtenidos con éxito."));
 
         }
 
         [HttpPost]
         [Route("api/ApiAccess/AddClient")]
-        public async Task<ActionResult<string>> AddClient([FromBody] RegisterUserVM regVM)
+        public async Task<IActionResult> AddClient([FromBody] RegisterUserVM regVM)
         {
 
             var checkUserByEmail = await _userManager.FindByEmailAsync(regVM.Email);
             if (checkUserByEmail != null)
             {
-                return Problem("Email ya existe");
+                return Conflict(ApiResponse.Failed("El correo electrónico ya existe.", "EMAIL_ALREADY_EXISTS"));
             }
             var checkUserByUsername = await _userManager.FindByNameAsync(regVM.UserName);
             if (checkUserByUsername != null)
             {
-                return Problem("Usuario ya existe");
+                return Conflict(ApiResponse.Failed("El nombre de usuario ya existe.", "USERNAME_ALREADY_EXISTS"));
                 
             }
 
@@ -961,7 +1221,7 @@ namespace PaletsWebApp.Controllers
             {
                 var ct = _context.UsersView!.Count(x => regVM.Documento!.StartsWith(x.Documento!));
                 if (ct > 0) {
-                    return Problem("Usuario ya existe");
+                    return Conflict(ApiResponse.Failed("El documento ya está registrado.", "DOCUMENT_ALREADY_EXISTS"));
                 }
             }
 
@@ -988,36 +1248,47 @@ namespace PaletsWebApp.Controllers
 
 
                 if (newRegRol?.Name == null)
-                    return Problem("Rol no existe");
+                    return NotFound(ApiResponse.Failed("El rol no existe.", "ROLE_NOT_FOUND"));
 
                 await _userManager.AddToRoleAsync(applicationUser, newRegRol.Name);
 
                
             }
+            else
+            {
+                var message = string.Join(" ", result.Errors.Select(x => x.Description));
+                return BadRequest(ApiResponse.Failed(
+                    string.IsNullOrWhiteSpace(message) ? "No se pudo registrar el usuario." : message,
+                    "USER_CREATION_FAILED"));
+            }
             
-            return CreatedAtAction("AddClient", "Ok, el registro se realizo con exito");
+            return CreatedAtAction("AddClient", ApiResponse.Succeeded(
+                new { userId = applicationUser.Id }, "Usuario registrado con éxito."));
         }
 
 
         [HttpPost]
         [Route("api/ApiAccess/ChangePasswordClient")]
-        public async Task<ActionResult<string>> ChangePasswordClient([FromBody] RegisterUserVM regVM)
+        public async Task<IActionResult> ChangePasswordClient([FromBody] RegisterUserVM regVM)
         {
 
             var checkUserByUsername = await _userManager.FindByNameAsync(regVM.UserName);
             if (checkUserByUsername == null)
             {
-                return Problem("Usuario no existe");
+                return NotFound(ApiResponse.Failed("El usuario no existe.", "USER_NOT_FOUND"));
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(checkUserByUsername);
             var result = await _userManager.ResetPasswordAsync(checkUserByUsername, token, regVM.Password);
             if (!result.Succeeded)
             {
-                return Problem("Sucedio un error al cambiar la contraseña");
+                var message = string.Join(" ", result.Errors.Select(x => x.Description));
+                return BadRequest(ApiResponse.Failed(
+                    string.IsNullOrWhiteSpace(message) ? "No se pudo cambiar la contraseña." : message,
+                    "PASSWORD_CHANGE_FAILED"));
             }
 
-            return CreatedAtAction("ChangePasswordClient", "Ok, la Contraseña se cambio con exito");
+            return Ok(ApiResponse.Succeeded(null, "Contraseña cambiada con éxito."));
             
         }
 

@@ -42,6 +42,18 @@ namespace PaletsWebApp.Data
               .ToView("View_Users")
               .HasKey(t => t.Id);
 
+            modelBuilder.Entity<Detalle>(entity =>
+            {
+                entity.Property(x => x.Estado).HasMaxLength(20);
+                entity.Property(x => x.Observaciones).HasMaxLength(500);
+                entity.Property(x => x.ApplicationUserIdResuelve).HasMaxLength(450);
+                entity.Property(x => x.EstadoPaletAnterior).HasMaxLength(20);
+                entity.Property(x => x.ApplicationUserIdCustodioAnterior).HasMaxLength(450);
+                entity.HasIndex(x => new { x.IdTransferencia, x.Estado });
+                entity.HasIndex(x => new { x.IdPalet, x.Estado });
+                entity.HasIndex(x => x.IdDetalleOrigen);
+            });
+
         }
 
     }

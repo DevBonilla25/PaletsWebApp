@@ -115,37 +115,9 @@
                             {
                                 <option value="-1">-cualquiera-</option>
                             }
-                            @if (@currFilterEstado == "4")
+                            @foreach (var estado in (IEnumerable<PaletsWebApp.Models.Catalogo>)ViewBag.EstadosTransferencia)
                             {
-                                <option value="4" selected>Por recibir</option>
-                            }
-                            else
-                            {
-                                <option value="4">Por recibir</option>
-                            }
-                            @if (@currFilterEstado == "5")
-                            {
-                                <option value="5" selected>Recibido</option>
-                            }
-                            else
-                            {
-                                <option value="5">Recibido</option>
-                            }
-                            @if (@currFilterEstado == "6")
-                            {
-                                <option value="6" selected>Rechazado</option>
-                            }
-                            else
-                            {
-                                <option value="6">Rechazado</option>
-                            }
-                            @if (@currFilterEstado == "12")
-                            {
-                                <option value="12" selected>Por reclamar</option>
-                            }
-                            else
-                            {
-                                <option value="12">Por reclamar</option>
+                                <option value="@estado.Id" selected="@(currFilterEstado == estado.Id.ToString())">@estado.Descripcion</option>
                             }
 
                         </select>
@@ -283,6 +255,7 @@
            asp-route-filterUserEnvia="@ViewData["filterUserEnvia"]"
            asp-route-filterUserRecibe="@ViewData["filterUserRecibe"]"
            asp-route-filterEstado="@ViewData["filterEstado"]"
+           asp-route-filterPalet="@ViewData["filterPalet"]"
            class="btn btn-outline-primary @prevDisabled">
             Anterior
         </a>
@@ -294,6 +267,7 @@
            asp-route-filterUserEnvia="@ViewData["filterUserEnvia"]"
            asp-route-filterUserRecibe="@ViewData["filterUserRecibe"]"
            asp-route-filterEstado="@ViewData["filterEstado"]"
+           asp-route-filterPalet="@ViewData["filterPalet"]"
            class="btn btn-outline-primary @nextDisabled">
             Siguiente
         </a>

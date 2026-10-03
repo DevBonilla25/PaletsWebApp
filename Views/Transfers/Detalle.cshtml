@@ -21,7 +21,9 @@
     bool isAdmin = false;
     var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
 
-    if (loggedInUser != null && await _userManager.IsInRoleAsync(loggedInUser, "Admin"))
+    if (loggedInUser != null &&
+        (await _userManager.IsInRoleAsync(loggedInUser, "Admin") ||
+         await _userManager.IsInRoleAsync(loggedInUser, "Supervisor")))
     {
         isAdmin = true;
     }
@@ -51,6 +53,15 @@
 
                             <label>Transferido para:</label>
                             <input type="text" asp-for="NombreUserRecibe" ReadOnly="true" class="form-control" />
+
+                            @if (!string.IsNullOrWhiteSpace(Model.NombreUsuariosResuelven))
+                            {
+                                <label>
+                                    @(Model.Estado == estadoReclamado ? "Aceptado por:" :
+                                      Model.Estado == estadoRechazado ? "Rechazado por:" : "Procesado por:")
+                                </label>
+                                <input type="text" asp-for="NombreUsuariosResuelven" ReadOnly="true" class="form-control" />
+                            }
 
                             <label>Estatus:</label>
                             <input type="text" asp-for="DescEstado" ReadOnly="true" class="form-control" />
@@ -93,11 +104,10 @@
 
                                 else
                                 {
-                                    //Esta linea obtiene la ruta de la imagen que se almcaena de manera local en el mismo servidor del proyecto
-                                    <!-- <img src="~/thumbnails/@Model.Foto" class="img-fluid" id="thumbnail" /> -->
-
-                                    //Esta linea obtiene link de la imagen almacenada en la base d edatos, que se subio a firebase desde la app móvil
-                                    <img src="@Model.Foto" class="img-fluid" id="thumbnail" alt="Descripción de la imagen" />
+                                    var fotoUrl = Model.Foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                        ? Model.Foto
+                                        : Url.Content($"~/thumbnails/{Model.Foto}");
+                                    <img src="@fotoUrl" class="img-fluid" id="thumbnail" alt="Imagen de transferencia" />
 
 
                                 }
@@ -105,8 +115,7 @@
 
                         </div>
 
-                        @if (Model.Estado == estadoPorRecibir &&
-                             Model.IdUserRecibe == ViewBag.loggedInUserId)
+                        @if (Model.Estado == estadoPorRecibir && Model.IdUserRecibe == ViewBag.loggedInUserId)
                         {
                             <div class="mb-2">
                                 <label>Foto</label>
@@ -141,6 +150,10 @@
                                 {
                                     <li>
                                         @palet.Descripcion
+                                        @if (!string.IsNullOrWhiteSpace(palet.DescEstadoDetalle))
+                                        {
+                                            <span class="badge bg-secondary ms-1">@palet.DescEstadoDetalle</span>
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -177,7 +190,8 @@
                     </div>
                 }
 
-                @if ((Model.Estado == estadoPorRecibir && (Model.IdUserEnvia == ViewBag.loggedInUserId || isAdmin)) ||
+                @if ((Model.Estado == estadoPorRecibir &&
+                    (Model.IdUserEnvia == ViewBag.loggedInUserId || isAdmin)) ||
                 (Model.Estado == estadoPorReclamar && Model.IdUserEnvia == ViewBag.loggedInUserId))
                 {
                     <div class="row">

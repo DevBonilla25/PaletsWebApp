@@ -69,7 +69,8 @@ namespace PaletsWebApp.Controllers
 
             var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == User.Identity!.Name);
             var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
-            if (loggedInUserRole[0] != WebsiteRoles.Admin)
+            if (!loggedInUserRole.Contains(WebsiteRoles.Admin) &&
+                !loggedInUserRole.Contains(WebsiteRoles.Supervisor))
             {
                 Palets = from s in Palets
                          where s.ApplicationUserId == loggedInUser!.Id
