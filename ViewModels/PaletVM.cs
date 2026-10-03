@@ -21,6 +21,15 @@ namespace PaletsWebApp.ViewModels
         public string? RolUser { get; set; }
 
         public bool IsSelected { get; set; }
+        public string? EstadoDetalle { get; set; }
+        public string? DescEstadoDetalle { get; set; }
+        public DateTime? FechaEstadoDetalle { get; set; }
+        public string? ObservacionesDetalle { get; set; }
+        public int? IdDetalleOrigen { get; set; }
+        public string? ApplicationUserIdResuelveDetalle { get; set; }
+        public bool EsCorreccionCustodia { get; set; }
+        public int? TransferenciaPendienteId { get; set; }
+        public string? ReceptorTransferenciaPendiente { get; set; }
 
         public List<SelectListItem>? UserList { get; set; }
         public List<SelectListItem>? EstatusList { get; set; }

@@ -12,7 +12,9 @@
     var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
 
     bool isAdmin = false;
-    if (loggedInUser != null && await _userManager.IsInRoleAsync(loggedInUser, "Admin"))
+    if (loggedInUser != null &&
+        (await _userManager.IsInRoleAsync(loggedInUser, "Admin") ||
+         await _userManager.IsInRoleAsync(loggedInUser, "Supervisor")))
     {
         isAdmin = true;
     }

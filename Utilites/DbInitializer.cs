@@ -159,6 +159,11 @@ namespace PaletsWebApp.Utilites
                 _context.SaveChanges();
 
             }
+
+            if (!_roleManager.RoleExistsAsync(WebsiteRoles.Supervisor).GetAwaiter().GetResult())
+            {
+                _roleManager.CreateAsync(new IdentityRole(WebsiteRoles.Supervisor)).GetAwaiter().GetResult();
+            }
         }
     }
 }

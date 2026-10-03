@@ -37,7 +37,7 @@ namespace PaletsWebApp.Controllers
             _configuration = configuration;
 
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Supervisor")]
         [HttpGet]
         public async Task<IActionResult> Index(
             string sortOrder,
@@ -156,7 +156,7 @@ namespace PaletsWebApp.Controllers
         }
 
 
-        [Authorize(Roles ="Admin")]
+        [Authorize(Roles ="Admin,Supervisor")]
         [HttpGet]
         public IActionResult Register()
         {
@@ -188,7 +188,7 @@ namespace PaletsWebApp.Controllers
             return View(vm);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Supervisor")]
         [HttpPost]
         public async Task<IActionResult> Register(RegisterUserVM vm)
         {
@@ -275,7 +275,7 @@ namespace PaletsWebApp.Controllers
       
 
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Supervisor")]
         [HttpGet("Editar")]
         public async Task<IActionResult> Editar(string id)
         {
@@ -332,7 +332,7 @@ namespace PaletsWebApp.Controllers
 
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Supervisor")]
         [HttpPost("Editar")]
         public async Task<IActionResult> Editar(RegisterUserVM vm)
         {
