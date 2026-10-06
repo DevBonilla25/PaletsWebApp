@@ -346,6 +346,7 @@ namespace PaletsWebApp.Controllers
                     IdUserRecibe = x.ApplicationUserIdRecibe!,
                     NombreUserRecibe = x.UserRecibeFullName!,
                 }).ToList();
+            await CompletarSupervisorReclamosAsync(listOfTransferVM);
 
             return Ok(ApiResponse.Succeeded(listOfTransferVM, "Transferencias obtenidas con éxito."));
         }
@@ -405,7 +406,9 @@ namespace PaletsWebApp.Controllers
                 IdUserEnvia = reg.ApplicationUserIdEnvia!,
                 IdUserRecibe = reg.ApplicationUserIdRecibe!,
                 NombreUserEnvia = reg.UserEnviaFullName!,
-                NombreUserRecibe = reg.UserRecibeFullName!,
+                NombreUserRecibe = reg.ApplicationUserIdRecibe == "Administradores"
+                    ? nombresUsuariosResuelven.FirstOrDefault() ?? "Supervisores"
+                    : reg.UserRecibeFullName!,
                 NombreUsuariosResuelven = string.Join(", ", nombresUsuariosResuelven),
                 Observaciones = reg.Observaciones,
                 Foto = reg.Foto,
@@ -421,38 +424,78 @@ namespace PaletsWebApp.Controllers
 
         [HttpGet]
         [Route("api/ApiAccess/GetTransferByPallet")]
-        public async Task<IActionResult> GetTransferByPallet(int Id)
+        public async Task<IActionResult> GetTransferByPallet(
+            int Id,
+            int page = 1,
+            int pageSize = 10)
         {
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
 
+            var transferenciasIds = _context.Detalles!.AsNoTracking()
+                .Where(x => x.IdPalet == Id)
+                .Select(x => x.IdTransferencia)
+                .Distinct();
 
-            var listOfTransferVM = await (from transferencia in _context.TransferenciasView!.AsNoTracking()
-                                          join detalle in _context.Detalles!.AsNoTracking()
-                                              on transferencia.Id equals detalle.IdTransferencia
-                                          where detalle.IdPalet == Id
-                                          select new TransferenciaVM
-                                          {
-                                              Id = transferencia.Id,
-                                              CodigoInterno = transferencia.CodigoInterno!,
-                                              FechaEnvio = transferencia.FechaEnvio,
-                                              FechaRecibo = transferencia.FechaRecibo,
-                                              FechaRechazo = transferencia.FechaRechazo,
-                                              FechaAnulado = transferencia.FechaAnulado,
-                                              Observaciones = transferencia.Observaciones,
-                                              Estado = transferencia.Estado,
-                                              DescEstado = transferencia.DescEstado,
-                                              Foto = transferencia.Foto,
-                                              IdUserEnvia = transferencia.ApplicationUserIdEnvia!,
-                                              NombreUserEnvia = transferencia.UserEnviaFullName!,
-                                              IdUserRecibe = transferencia.ApplicationUserIdRecibe!,
-                                              NombreUserRecibe = transferencia.UserRecibeFullName!
-                                          })
-                .Distinct()
+            var listOfTransferVM = await _context.TransferenciasView!.AsNoTracking()
+                .Where(x => transferenciasIds.Contains(x.Id))
                 .OrderByDescending(x => x.FechaEnvio)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(transferencia => new TransferenciaVM
+                {
+                    Id = transferencia.Id,
+                    CodigoInterno = transferencia.CodigoInterno!,
+                    FechaEnvio = transferencia.FechaEnvio,
+                    FechaRecibo = transferencia.FechaRecibo,
+                    FechaRechazo = transferencia.FechaRechazo,
+                    FechaAnulado = transferencia.FechaAnulado,
+                    Observaciones = transferencia.Observaciones,
+                    Estado = transferencia.Estado,
+                    DescEstado = transferencia.DescEstado,
+                    Foto = transferencia.Foto,
+                    IdUserEnvia = transferencia.ApplicationUserIdEnvia!,
+                    NombreUserEnvia = transferencia.UserEnviaFullName!,
+                    IdUserRecibe = transferencia.ApplicationUserIdRecibe!,
+                    NombreUserRecibe = transferencia.UserRecibeFullName!
+                })
                 .ToListAsync();
+            await CompletarSupervisorReclamosAsync(listOfTransferVM);
 
 
             return Ok(ApiResponse.Succeeded(listOfTransferVM, "Transferencias del pallet obtenidas con éxito."));
 
+        }
+
+        private async Task CompletarSupervisorReclamosAsync(List<TransferenciaVM> transferencias)
+        {
+            var reclamosIds = transferencias
+                .Where(x => x.IdUserRecibe == "Administradores")
+                .Select(x => x.Id)
+                .ToList();
+            if (reclamosIds.Count == 0)
+                return;
+
+            var resoluciones = await (from detalle in _context.Detalles!.AsNoTracking()
+                                      join usuario in _userManager.Users.AsNoTracking()
+                                          on detalle.ApplicationUserIdResuelve equals usuario.Id
+                                      where reclamosIds.Contains(detalle.IdTransferencia)
+                                      select new
+                                      {
+                                          detalle.IdTransferencia,
+                                          Nombre = (usuario.Nombres + " " + usuario.Apellidos).Trim()
+                                      }).ToListAsync();
+
+            foreach (var reclamo in transferencias.Where(x => reclamosIds.Contains(x.Id)))
+            {
+                var nombres = resoluciones
+                    .Where(x => x.IdTransferencia == reclamo.Id)
+                    .Select(x => x.Nombre)
+                    .Distinct()
+                    .ToList();
+                reclamo.NombreUsuariosResuelven = string.Join(", ", nombres);
+                reclamo.NombreUserRecibe = nombres.FirstOrDefault() ?? "Supervisores";
+            }
         }
 
 
@@ -967,7 +1010,14 @@ namespace PaletsWebApp.Controllers
                 // despues de actualizar el estado de la transferencia se envian las notificaciones correspondientes
                 var viewTrans = await _context.TransferenciasView!.Where(x => x.Id == imageTransferModel.TransferenciaId).SingleAsync();
 
-                if (operacion == "aceptar")
+                if (esReclamo)
+                {
+                    await _reclamoService.NotificarResultadoAsync(
+                        imageTransferModel.TransferenciaId,
+                        usuarioProcesa.Id,
+                        operacion == "aceptar");
+                }
+                else if (operacion == "aceptar")
                 {
                     await Utils.SendNotification(viewTrans.UserEnviaFirebaseToken,
                                            viewTrans.UserEnviaEmail ?? string.Empty,
@@ -992,9 +1042,10 @@ namespace PaletsWebApp.Controllers
                 }
 
 
+                var tipoMovimiento = esReclamo ? "Reclamo" : "Transferencia";
                 var message = operacion == "aceptar"
-                    ? "Transferencia aceptada con éxito."
-                    : "Transferencia rechazada con éxito.";
+                    ? $"{tipoMovimiento} aceptado con éxito."
+                    : $"{tipoMovimiento} rechazado con éxito.";
                 return Ok(ApiResponse.Succeeded(null, message));
 
             }

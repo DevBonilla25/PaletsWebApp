@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
+using PaletsWebApp.Utilites;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -11,12 +12,7 @@ public class FirebaseStorageService
 
     public FirebaseStorageService()
     {
-        // Ruta al archivo JSON de credenciales de Firebase
-        string credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "serviceAccountKey.json");
-
-
-        // Inicializa el cliente de almacenamiento con las credenciales
-        _storageClient = StorageClient.Create(Google.Apis.Auth.OAuth2.GoogleCredential.FromFile(credentialsPath));
+        _storageClient = StorageClient.Create(Utils.GetFirebaseCredential());
     }
 
     public async Task<string> UploadImageAsync(Stream imageStream, string fileName)

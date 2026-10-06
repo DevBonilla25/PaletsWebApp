@@ -406,10 +406,44 @@ namespace PaletsWebApp.Controllers
             // Si no hay filtro, no cargues pallets adicionales
             if (!string.IsNullOrWhiteSpace(sDescripcion))
             {
+                var termino = sDescripcion.Trim();
+                var digitos = new string(termino.Where(char.IsDigit).ToArray());
+                var textoRestante = termino.ToLowerInvariant()
+                    .Replace("pallet", string.Empty)
+                    .Replace("palet", string.Empty)
+                    .Replace("#", string.Empty)
+                    .Replace(" ", string.Empty);
+                int? numeroPalet = textoRestante.Length == 0 && int.TryParse(digitos, out var numero)
+                    ? numero
+                    : null;
+                var numeroSinCeros = numeroPalet?.ToString();
+                var numeroTresDigitos = numeroPalet?.ToString("D3");
+
                 var idsEstadosVisibles = await _context.Catalogos!
                     .Where(x => x.Categoria == "estado_palets" &&
                                 x.Descripcion!.ToLower() != "dado de baja")
                     .Select(x => x.Id.ToString())
+                    .ToListAsync();
+
+                resultadosBusqueda = await _context.PaletsView!.AsNoTracking()
+                    .Where(x => x.ApplicationUserId != loggedInUser.Id &&
+                                x.Descripcion != null &&
+                                idsEstadosVisibles.Contains(x.Estado!) &&
+                                (EF.Functions.Like(x.Descripcion, $"%{termino}%") ||
+                                 (numeroPalet.HasValue &&
+                                  (EF.Functions.Like(x.Descripcion, $"%#{numeroSinCeros}") ||
+                                   EF.Functions.Like(x.Descripcion, $"%#{numeroTresDigitos}")))))
+                    .OrderBy(x => x.Descripcion)
+                    .Take(20)
+                    .Select(x => new PaletVM
+                    {
+                        Id = x.Id,
+                        Descripcion = x.Descripcion ?? string.Empty,
+                        Estado = x.Estado,
+                        DescEstado = x.DescEstado,
+                        ApplicationUserId = x.ApplicationUserId,
+                        ApplicationUserName = x.UserFullName
+                    })
                     .ToListAsync();
 
                 var idsEnTransferencia = resultadosBusqueda
@@ -449,24 +483,6 @@ namespace PaletsWebApp.Controllers
                         palet.ReceptorTransferenciaPendiente = origen.UserRecibeFullName;
                     }
                 }
-
-                resultadosBusqueda = await _context.PaletsView!.AsNoTracking()
-                    .Where(x => x.ApplicationUserId != loggedInUser.Id &&
-                                x.Descripcion != null &&
-                                idsEstadosVisibles.Contains(x.Estado!) &&
-                                EF.Functions.Like(x.Descripcion, $"%{sDescripcion.Trim()}%"))
-                    .OrderBy(x => x.Descripcion)
-                    .Take(20)
-                    .Select(x => new PaletVM
-                    {
-                        Id = x.Id,
-                        Descripcion = x.Descripcion ?? string.Empty,
-                        Estado = x.Estado,
-                        DescEstado = x.DescEstado,
-                        ApplicationUserId = x.ApplicationUserId,
-                        ApplicationUserName = x.UserFullName
-                    })
-                    .ToListAsync();
 
                 foreach (var palet in resultadosBusqueda)
                 {
@@ -930,6 +946,10 @@ namespace PaletsWebApp.Controllers
                     var (successAceptar, tipoAceptar) = await procesarTransfer(vm, submit, loggedInUser.Id);
                     if (successAceptar)
                     {
+                        if (tipoAceptar == "reclamo")
+                        {
+                            await _reclamoService.NotificarResultadoAsync(vm.Id, loggedInUser.Id, aceptado: true);
+                        }
                         _notification.Success($"El {tipoAceptar} fue aceptado exitosamente");
                         return RedirectToAction("Index");
                     }
@@ -938,6 +958,10 @@ namespace PaletsWebApp.Controllers
                     var (successRechazar, tipoRechazar) = await procesarTransfer(vm, submit, loggedInUser.Id);
                     if (successRechazar)
                     {
+                        if (tipoRechazar == "reclamo")
+                        {
+                            await _reclamoService.NotificarResultadoAsync(vm.Id, loggedInUser.Id, aceptado: false);
+                        }
                         _notification.Success($"El {tipoRechazar} fue rechazado exitosamente");
                         return RedirectToAction("Index");
                     }

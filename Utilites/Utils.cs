@@ -215,8 +215,15 @@ namespace PaletsWebApp.Utilites
                         notification = new
                         {
                             body = mensaje,
-                            title = titulo,
-                            sound = "Enabled"
+                            title = titulo
+                        },
+                        android = new
+                        {
+                            priority = "HIGH",
+                            notification = new
+                            {
+                                sound = "default"
+                            }
                         },
                         data = new
                         {
@@ -231,12 +238,17 @@ namespace PaletsWebApp.Utilites
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 using var responseFCM = await HttpClientInstance.SendAsync(request);
-                responseFCM.EnsureSuccessStatusCode();
                 response = await responseFCM.Content.ReadAsStringAsync();
+                if (!responseFCM.IsSuccessStatusCode)
+                {
+                    throw new InvalidOperationException(
+                        $"FCM respondió {(int)responseFCM.StatusCode}: {response}");
+                }
             }
             catch (Exception ex)
             {
                 response = ex.Message;
+                Console.Error.WriteLine($"No se pudo enviar la notificación FCM: {ex.Message}");
             }
 
             return response;
@@ -244,13 +256,44 @@ namespace PaletsWebApp.Utilites
 
         public static async Task<string> GetAccessToken()
         {
-            // Aquí no se necesita el await ya que FromFile() es sincrónico
-            GoogleCredential credential = GoogleCredential
-                .FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "serviceAccountKey.json"))  // Ajusta la ruta a tu archivo JSON
+            var credential = GetFirebaseCredential()
                 .CreateScoped("https://www.googleapis.com/auth/cloud-platform");
 
-            // Esta parte sí debe usar await ya que es una llamada asíncrona
             return await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+        }
+
+        public static GoogleCredential GetFirebaseCredential()
+        {
+            var credentialBase64 = Environment.GetEnvironmentVariable(
+                "FIREBASE_SERVICE_ACCOUNT_BASE64");
+            if (!string.IsNullOrWhiteSpace(credentialBase64))
+            {
+                try
+                {
+                    var json = Encoding.UTF8.GetString(
+                        Convert.FromBase64String(credentialBase64.Trim()));
+                    return GoogleCredential.FromJson(json);
+                }
+                catch (Exception ex) when (ex is FormatException || ex is JsonException)
+                {
+                    throw new InvalidOperationException(
+                        "La variable FIREBASE_SERVICE_ACCOUNT_BASE64 no contiene una credencial válida.",
+                        ex);
+                }
+            }
+
+            var credentialPath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Data",
+                "serviceAccountKey.json");
+            if (!File.Exists(credentialPath))
+            {
+                throw new FileNotFoundException(
+                    "No se configuró la credencial de Firebase en la variable de entorno ni en el archivo local.",
+                    credentialPath);
+            }
+
+            return GoogleCredential.FromFile(credentialPath);
         }
 
         internal static void SendNotification(object userEnviaFirebaseToken, object userEnviaEmail, object userEnviaFullName, string v, object value)
