@@ -1,4 +1,4 @@
-﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using AspNetCoreHero.ToastNotification.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +41,8 @@ namespace PaletsWebApp.Controllers
             string sUser,
             string filterEstado,
             string sEstado,
-            int? pageNumber)
+            int? pageNumber,
+            int pageSize = 15)
         {
 
             ViewData["CurrentSort"] = sortOrder;
@@ -128,7 +129,8 @@ namespace PaletsWebApp.Controllers
             }
 
 
-            int pageSize = 5;
+            pageSize = new[] { 15, 25, 50 }.Contains(pageSize) ? pageSize : 15;
+            ViewData["PageSize"] = pageSize;
             return View(await PaginatedList<View_Palet>.CreateAsync(Palets, pageNumber ?? 1, pageSize));
 
 

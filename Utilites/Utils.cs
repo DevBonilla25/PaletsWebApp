@@ -1,4 +1,4 @@
-﻿using NuGet.Protocol.Plugins;
+using NuGet.Protocol.Plugins;
 using System.Net;
 using System.Text;
 using System;
@@ -16,38 +16,29 @@ namespace PaletsWebApp.Utilites
         //public static string applicationID = "AAAAMlxmOFM:APA91bEXj6-nCmKUs4_GbAUzMN62e3iL6RsV6zDLQwdEkELSrlWvPqYc4EReuaHoC5hyhC5K3X__EGBAAUyU0P9BV4qm9d4-iSh9Am8Ks6dDzBPxhd_1XgR0XygsLjOK4BIvJz1c7-tW";
         //public static string senderId = "216298567763";
 
-        public static string BadgeTransfer(string cad)
+        public static string StatusClass(string? status)
         {
-
-            //https://www.studytonight.com/bootstrap/bootstrap-badge
-
-            string ret = "";
-
-            if (cad.ToLower() == "por recibir" || cad.ToLower() == "por reclamar") { ret = "bg-secondary"; }
-            else if (cad.ToLower() == "recibido" || cad.ToLower() == "reclamado") { ret = "bg-success"; }
-            else if (cad.ToLower() == "rechazado") { ret = "bg-danger"; }
-            else if (cad.ToLower() == "anulado") { ret = "bg-danger"; }
-            else if (cad.ToLower() == "procesado parcialmente") { ret = "bg-warning text-dark"; }
-            else { ret = "bg-primary"; }
-
-            return ret;
-
+            return status?.Trim().ToLowerInvariant() switch
+            {
+                "disponible" => "status-disponible",
+                "recibido" => "status-recibido",
+                "en transferencia" => "status-en-transferencia",
+                "por recibir" => "status-pendiente",
+                "por reclamar" => "status-pendiente",
+                "reclamado" => "status-reclamado",
+                "en reclamo" => "status-reclamado",
+                "rechazado" => "status-rechazado",
+                "anulado" => "status-anulado",
+                "dado de baja" => "status-anulado",
+                "procesado parcialmente" => "status-parcial",
+                _ => "status-desconocido"
+            };
         }
 
-        public static string BadgePalet(string cad)
-        {
+        public static string BadgeTransfer(string cad) => StatusClass(cad);
 
-            //https://www.studytonight.com/bootstrap/bootstrap-badge
+        public static string BadgePalet(string cad) => StatusClass(cad);
 
-            string ret = "";
-
-            if (cad.ToLower() == "disponible" || cad.ToLower() == "reclamado") { ret = "bg-primary"; }
-            else if (cad.ToLower() == "en transferencia" || cad.ToLower() == "en reclamo") { ret = "bg-warning"; }
-            else if (cad.ToLower() == "dado de baja") { ret = "bg-danger"; }
-
-            return ret;
-
-        }
         public static string BadgeUser(bool? cad)
         {
 

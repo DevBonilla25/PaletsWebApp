@@ -1,0 +1,311 @@
+.transfer-form-grid {
+    display:grid;
+    grid-template-columns:minmax(0,3fr) minmax(340px,2fr);
+    gap:18px;
+    align-items:start
+}
+.transfer-section {
+    padding:22px
+}
+.section-heading {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    margin-bottom:18px
+}
+.section-heading h2 {
+    font-size:1rem;
+    font-weight:750;
+    margin:1px 0 3px
+}
+.section-heading p {
+    color:var(--muted);
+    font-size:.85rem;
+    margin:0
+}
+.section-icon {
+    width:36px;
+    height:36px;
+    display:grid;
+    place-items:center;
+    border-radius:9px;
+    background:#fff3e7;
+    color:var(--primary);
+    flex:0 0 auto
+}
+.transfer-summary {
+    position:sticky;
+    top:86px
+}
+.summary-block {
+    padding:14px 0;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    gap:12px
+}
+.summary-block span {
+    color:var(--muted)
+}
+.selected-pallets {
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    padding-top:15px
+}
+.selection-chip {
+    background:#fff4e8;
+    border:1px solid #ffd4a8;
+    color:#9a4c00;
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:.8rem
+}
+.pallet-search-wrap {
+    position:relative;
+    margin-bottom:12px
+}
+.pallet-search-wrap i {
+    position:absolute;
+    left:14px;
+    top:12px;
+    color:var(--muted)
+}
+.pallet-search-wrap .form-control {
+    padding-left:40px
+}
+.pallet-picker {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+    max-height:420px;
+    overflow:auto;
+    padding:2px
+}
+.pallet-option {
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    margin:0
+}
+.pallet-option:hover {
+    border-color:#f3a352;
+    background:#fffaf5
+}
+.pallet-option:has(input:checked) {
+    border-color:var(--primary);
+    background:#fff7ed
+}
+.pallet-option-copy {
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    flex:1
+}
+.pallet-option-copy strong {
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+}
+.pallet-option-copy small {
+    color:var(--muted)
+}
+.ts-wrapper .ts-control {
+    min-height:44px;
+    border-radius:8px;
+    border-color:#ccd3dd;
+    padding:10px 12px
+}
+.ts-wrapper.focus .ts-control {
+    border-color:#f3a352;
+    box-shadow:0 0 0 .2rem rgba(245,124,0,.13)
+}
+.claim-workspace {
+    overflow:hidden
+}
+.claim-titlebar {
+    background:var(--primary);
+    color:#fff;
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    gap:12px
+}
+.claim-titlebar h1 {
+    font-size:1.35rem;
+    margin:0
+}
+.claim-titlebar p {
+    margin:2px 0 0;
+    font-size:.84rem
+}
+.claim-back {
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:rgba(255,255,255,.2);
+    color:#fff;
+    text-decoration:none
+}
+.claim-workspace-body {
+    display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(360px,.95fr);
+    gap:24px;
+    padding:20px
+}
+.claim-section-title {
+    font-size:1rem;
+    font-weight:750;
+    margin-bottom:10px
+}
+.claim-search .btn {
+    min-width:110px
+}
+.claim-results-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:18px 0 9px
+}
+.claim-results-list {
+    display:grid;
+    gap:9px
+}
+.claim-result {
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px
+}
+.claim-result-info {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:7px;
+    min-width:0;
+    flex:1
+}
+.claim-result-main {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width:0
+}
+.claim-result-main strong {
+    white-space:nowrap
+}
+.claim-result-owner {
+    color:var(--text);
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+}
+.claim-result-main .badge {
+    flex:0 0 auto
+}
+.claim-result-info small {
+    color:var(--muted)
+}
+.claim-summary {
+    background:#f8fafc;
+    border:1px solid var(--border);
+    border-radius:11px;
+    padding:16px;
+    position:sticky;
+    top:86px
+}
+.claim-summary-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:center
+}
+.claim-selected-list {
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin-top:12px
+}
+.claim-selected-item {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    border:1px solid var(--primary);
+    border-radius:999px;
+    padding:5px 6px 5px 11px;
+    background:#fff
+}
+.claim-remove {
+    width:23px;
+    height:23px;
+    border:0;
+    border-radius:50%;
+    background:var(--primary);
+    color:#fff;
+    display:grid;
+    place-items:center
+}
+.claim-actions {
+    display:flex;
+    justify-content:flex-end;
+    gap:9px;
+    margin-top:16px
+}
+.claim-empty-state,.claim-selection-empty {
+    padding:18px;
+    color:var(--muted);
+    background:#f8fafc;
+    border-radius:9px;
+    display:flex;
+    gap:8px
+}
+.claim-blocked-message {
+    color:#9a6700!important
+}
+@media(max-width:991px) {
+    .transfer-form-grid,.claim-workspace-body {
+        grid-template-columns:1fr
+    }
+    .transfer-summary,.claim-summary {
+        position:static
+    }
+    .pallet-picker {
+        grid-template-columns:1fr
+    }
+}
+@media(max-width:600px) {
+    .transfer-section {
+        padding:16px
+    }
+    .claim-workspace-body {
+        padding:14px
+    }
+    .claim-titlebar {
+        padding:14px
+    }
+    .claim-result {
+        align-items:stretch;
+        flex-direction:column
+    }
+    .claim-result .btn {
+        width:100%
+    }
+    .claim-actions,.transfer-summary .form-actions {
+        flex-direction:column-reverse
+    }
+    .claim-actions .btn,.transfer-summary .btn {
+        width:100%
+    }
+    .pallet-picker {
+        max-height:none
+    }
+}

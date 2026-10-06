@@ -1,4 +1,4 @@
-﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using AspNetCoreHero.ToastNotification.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -67,7 +67,9 @@ namespace PaletsWebApp.Controllers
             string sEstado,
             string filterPalet,
             string sPalet,
-            int? pageNumber)
+            int? palletId,
+            int? pageNumber,
+            int pageSize = 15)
         {
 
             ViewData["CurrentSort"] = sortOrder;
@@ -98,6 +100,7 @@ namespace PaletsWebApp.Controllers
             ViewData["filterDate2"] = sDate2;
             ViewData["filterEstado"] = sEstado;
             ViewData["filterPalet"] = sPalet;
+            ViewData["PalletId"] = palletId;
 
 
 
@@ -110,6 +113,18 @@ namespace PaletsWebApp.Controllers
 
             // Determinar si el usuario puede reclamar palets
             ViewBag.CanReclaimPalets = !loggedInUserRole.Contains(WebsiteRoles.Cliente);
+
+            if (palletId.HasValue)
+            {
+                var palletQuery = _context.PaletsView!.AsNoTracking().Where(x => x.Id == palletId.Value);
+                if (!loggedInUserRole.Contains(WebsiteRoles.Admin) &&
+                    !loggedInUserRole.Contains(WebsiteRoles.Supervisor))
+                {
+                    palletQuery = palletQuery.Where(x => x.ApplicationUserId == loggedInUser.Id);
+                }
+                ViewBag.HistoryPallet = await palletQuery.SingleOrDefaultAsync();
+                if (ViewBag.HistoryPallet == null) return NotFound();
+            }
 
             DateTime? fechaDesde = null;
             DateTime? fechaHasta = null;
@@ -134,7 +149,8 @@ namespace PaletsWebApp.Controllers
 
        
 
-            int pageSize = 5;
+            pageSize = new[] { 15, 25, 50 }.Contains(pageSize) ? pageSize : 15;
+            ViewData["PageSize"] = pageSize;
             // El servicio ejecuta los mismos filtros de visibilidad y orden usados por la API.
             var page = await _transferenciaQueryService.GetPageAsync(new TransferenciaQuery
             {
@@ -145,6 +161,7 @@ namespace PaletsWebApp.Controllers
                 UserRecibe = sUserRecibe,
                 Estado = sEstado,
                 Palet = sPalet,
+                PaletId = palletId,
                 FechaDesde = fechaDesde,
                 FechaHasta = fechaHasta,
                 SortOrder = sortOrder,
@@ -176,7 +193,7 @@ namespace PaletsWebApp.Controllers
             {
                 if (palletDescriptions.TryGetValue(transfer.Id, out var descriptions))
                 {
-                    transfer.CodigoInterno += " Pallets: " + descriptions;
+                    transfer.CodigoInterno = transfer.CodigoInterno;
                 }
             }
 

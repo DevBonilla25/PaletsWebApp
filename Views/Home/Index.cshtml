@@ -1,7 +1,130 @@
-﻿@{
-    ViewData["Title"] = "Pagina de Inicio";
+@model PaletsWebApp.ViewModels.DashboardVM
+@using PaletsWebApp.Utilites
+@{
+    ViewData["Title"] = "Dashboard";
+    var maxPalets = Math.Max(1, Model.PaletsPorEstado.Values.DefaultIfEmpty(0).Max());
+    var maxTransfers = Math.Max(1, Model.TransferenciasPorEstado.Values.DefaultIfEmpty(0).Max());
 }
 
-<div class="text-center">
-    <h1 class="display-4">Bienvenidos</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Hola, @Model.UserName</h1>
+        <p class="page-subtitle">Resumen operativo calculado con los datos actuales del sistema.</p>
+    </div>
+    <a class="btn btn-primary" asp-controller="Transfers" asp-action="Create">
+        <i class="bi bi-plus-lg me-2"></i>Nueva transferencia
+    </a>
 </div>
+
+<section class="metric-grid">
+    <article class="surface metric-card">
+        <div>
+            <span class="metric-label">Pallets totales</span>
+            <div class="metric-value">@Model.TotalPalets</div>
+        </div>
+        <span class="metric-icon metric-icon-total">
+            <i class="bi bi-box-seam"></i>
+        </span>
+    </article>
+
+    <article class="surface metric-card">
+        <div>
+            <span class="metric-label">Disponibles</span>
+            <div class="metric-value">@Model.PaletsDisponibles</div>
+        </div>
+        <span class="metric-icon metric-icon-disponible">
+            <i class="bi bi-check-circle"></i>
+        </span>
+    </article>
+
+    <article class="surface metric-card">
+        <div>
+            <span class="metric-label">En transferencia</span>
+            <div class="metric-value">@Model.PaletsEnTransferencia</div>
+        </div>
+        <span class="metric-icon metric-icon-transferencia">
+            <i class="bi bi-arrow-left-right"></i>
+        </span>
+    </article>
+
+    <article class="surface metric-card">
+        <div>
+            <span class="metric-label">Transferencias pendientes</span>
+            <div class="metric-value">@Model.TransferenciasPendientes</div>
+        </div>
+        <span class="metric-icon metric-icon-pendiente">
+            <i class="bi bi-clock"></i>
+        </span>
+    </article>
+</section>
+
+<section class="dashboard-grid">
+    <article class="surface panel">
+        <h2 class="panel-title">Pallets por estado</h2>
+        @foreach (var item in Model.PaletsPorEstado.OrderByDescending(x => x.Value))
+        {
+            <div class="chart-row">
+                <span class="chart-label">@item.Key</span>
+                <div class="chart-track">
+                    <div class="chart-bar @Utils.StatusClass(item.Key)"
+                         style="width:@(item.Value * 100 / maxPalets)%"></div>
+                </div>
+                <strong>@item.Value</strong>
+            </div>
+        }
+        @if (!Model.PaletsPorEstado.Any())
+        {
+            <div class="empty-state">No hay pallets registrados.</div>
+        }
+    </article>
+
+    <article class="surface panel">
+        <h2 class="panel-title">Transferencias por estado</h2>
+        @foreach (var item in Model.TransferenciasPorEstado.OrderByDescending(x => x.Value))
+        {
+            <div class="chart-row">
+                <span class="chart-label">@item.Key</span>
+                <div class="chart-track">
+                    <div class="chart-bar @Utils.StatusClass(item.Key)"
+                         style="width:@(item.Value * 100 / maxTransfers)%"></div>
+                </div>
+                <strong>@item.Value</strong>
+            </div>
+        }
+        @if (!Model.TransferenciasPorEstado.Any())
+        {
+            <div class="empty-state">No hay transferencias registradas.</div>
+        }
+    </article>
+
+    <article class="surface panel" style="grid-column:1/-1">
+        <div class="d-flex justify-content-between">
+            <h2 class="panel-title">Transferencias recientes</h2>
+            <a asp-controller="Transfers" asp-action="Index">Ver todas</a>
+        </div>
+        <div class="recent-list">
+            @foreach (var item in Model.TransferenciasRecientes)
+            {
+                <a class="recent-item text-decoration-none text-reset"
+                   asp-controller="Transfers"
+                   asp-action="Detalle"
+                   asp-route-id="@item.Id">
+                    <span>
+                        <strong>@item.CodigoInterno</strong>
+                        <small>@item.UserEnviaFullName &rarr; @item.UserRecibeFullName</small>
+                    </span>
+                    <span class="text-end">
+                        <span class="status-badge @Utils.BadgeTransfer(item.DescEstado ?? "")">
+                            @item.DescEstado
+                        </span>
+                        <small class="d-block mt-1">@Utils.FormatDate(item.FechaEnvio)</small>
+                    </span>
+                </a>
+            }
+            @if (!Model.TransferenciasRecientes.Any())
+            {
+                <div class="empty-state">No hay actividad reciente.</div>
+            }
+        </div>
+    </article>
+</section>
