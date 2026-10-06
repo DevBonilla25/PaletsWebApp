@@ -81,11 +81,25 @@ namespace PaletsWebApp.Services
 
             if (!string.IsNullOrWhiteSpace(request.Palet))
             {
-                query = query.Where(transferencia =>
-                    _context.Detalles!.Any(detalle =>
-                        detalle.IdTransferencia == transferencia.Id &&
-                        _context.Palets!.Any(palet =>
-                            palet.Id == detalle.IdPalet && palet.Descripcion == request.Palet)));
+                var terminoPalet = request.Palet.Trim();
+                var idsPalets = await _context.Palets!.AsNoTracking()
+                    .Where(x => x.Descripcion != null && x.Descripcion.Contains(terminoPalet))
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (idsPalets.Count == 0)
+                {
+                    query = query.Where(x => false);
+                }
+                else
+                {
+                    var transferenciasIds = await _context.Detalles!.AsNoTracking()
+                        .Where(x => idsPalets.Contains(x.IdPalet))
+                        .Select(x => x.IdTransferencia)
+                        .Distinct()
+                        .ToListAsync();
+                    query = query.Where(x => transferenciasIds.Contains(x.Id));
+                }
             }
 
             // Id descendente usa la clave indexada y evita el costoso ordenamiento por fecha.

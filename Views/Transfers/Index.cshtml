@@ -33,6 +33,15 @@
                 format: "dd/mm/yyyy",
                 language: "tr"
             });
+
+            $('#transferFilterForm').on('submit', function () {
+                $(this).find('input[name], select[name]').each(function () {
+                    const value = String($(this).val() ?? '').trim();
+                    if (!value || (this.name === 'sEstado' && value === '-1')) {
+                        this.disabled = true;
+                    }
+                });
+            });
         });
     </script>
 
@@ -74,9 +83,7 @@
 
         <div class="one collapse" id="myFilterCollapse">
 
-            <form asp-action="Index" method="get">
-            
-                <input type="hidden" id="hd_show_filter" name="showFilter" />
+            <form asp-action="Index" method="get" id="transferFilterForm">
 
                 <div class="row">
 

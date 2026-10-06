@@ -171,6 +171,36 @@ namespace PaletsWebApp.Services
             }
         }
 
+        public async Task NotificarResultadoAsync(
+            int reclamoId,
+            string usuarioProcesaId,
+            bool aceptado)
+        {
+            var reclamo = await _context.Transferencias!.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == reclamoId);
+            if (reclamo == null || string.IsNullOrWhiteSpace(reclamo.ApplicationUserIdEnvia))
+                return;
+
+            var idsUsuarios = new[] { reclamo.ApplicationUserIdEnvia, usuarioProcesaId };
+            var usuarios = await _userManager.Users.AsNoTracking()
+                .Where(x => idsUsuarios.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id);
+            if (!usuarios.TryGetValue(reclamo.ApplicationUserIdEnvia, out var reclamante))
+                return;
+
+            var nombreProcesa = usuarios.TryGetValue(usuarioProcesaId, out var usuarioProcesa)
+                ? $"{usuarioProcesa.Nombres} {usuarioProcesa.Apellidos}".Trim()
+                : "un supervisor";
+            var resultado = aceptado ? "aceptado" : "rechazado";
+
+            await Utils.SendNotification(
+                reclamante.FirebaseToken,
+                reclamante.Email ?? string.Empty,
+                $"{reclamante.Nombres} {reclamante.Apellidos}".Trim(),
+                $"Reclamo {resultado}",
+                $"Tu reclamo #{reclamoId} fue {resultado} por {nombreProcesa}.");
+        }
+
         private async Task NotificarDesplazadosAsync(
             ResultadoAdjudicacionReclamo resultado,
             string? ganadorId)
