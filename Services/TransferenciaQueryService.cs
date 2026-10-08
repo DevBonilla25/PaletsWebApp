@@ -14,6 +14,7 @@ namespace PaletsWebApp.Services
         public string? UserRecibe { get; set; }
         public string? Estado { get; set; }
         public string? Palet { get; set; }
+        public int? PaletId { get; set; }
         public DateTime? FechaDesde { get; set; }
         public DateTime? FechaHasta { get; set; }
         public string? SortOrder { get; set; }
@@ -79,7 +80,14 @@ namespace PaletsWebApp.Services
             if (request.FechaHasta.HasValue)
                 query = query.Where(x => x.FechaEnvio <= request.FechaHasta.Value);
 
-            if (!string.IsNullOrWhiteSpace(request.Palet))
+            if (request.PaletId.HasValue)
+            {
+                var transferenciaIds = _context.Detalles!.AsNoTracking()
+                    .Where(x => x.IdPalet == request.PaletId.Value)
+                    .Select(x => x.IdTransferencia);
+                query = query.Where(x => transferenciaIds.Contains(x.Id));
+            }
+            else if (!string.IsNullOrWhiteSpace(request.Palet))
             {
                 var terminoPalet = request.Palet.Trim();
                 var idsPalets = await _context.Palets!.AsNoTracking()

@@ -1,245 +1,114 @@
-﻿@using Microsoft.AspNetCore.Identity;
-@using PaletsWebApp.Utilites;
-@inject UserManager<ApplicationUser> _userManager;
-
+@using Microsoft.AspNetCore.Identity
+@using PaletsWebApp.Utilites
+@inject UserManager<ApplicationUser> UserManager
 @model PaginatedList<PaletsWebApp.Models.View_Palet>
+
 @{
-    ViewData["Title"] = "Lista de Palets";
-
-    var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
-
-    bool isAdmin = false;
-    if (loggedInUser != null &&
-        (await _userManager.IsInRoleAsync(loggedInUser, "Admin") ||
-         await _userManager.IsInRoleAsync(loggedInUser, "Supervisor")))
-    {
-        isAdmin = true;
-    }
-
-    string currFilterEstado = ViewData["filterEstado"]?.ToString() ?? "-1";
-
-    
+    ViewData["Title"] = "Pallets";
+    var user = await UserManager.GetUserAsync(User);
+    var roles = user == null ? new List<string>() : (await UserManager.GetRolesAsync(user)).ToList();
+    var isAdmin = roles.Contains("Admin") || roles.Contains("Supervisor");
+    ViewData["CanManagePalets"] = isAdmin;
+    var currentStatus = ViewData["filterEstado"]?.ToString() ?? "-1";
+    var pageSize = (int?)ViewData["PageSize"] ?? 15;
+    var rowNumber = ((Model.PageIndex - 1) * pageSize) + 1;
 }
 
-<div class="container-fluid">
-
+<div class="page-header">
+    <div><h1 class="page-title">Pallets</h1><p class="page-subtitle">Inventario disponible según tus permisos.</p></div>
     @if (isAdmin)
     {
-        <a class="btn btn-primary mb-1" asp-action="Create" asp-controller="Palets">
-            <span class="bi-plus" style="margin-right:5px; font-weight: bold; "></span>
-            Nuevo
-        </a>
+        <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg me-2"></i>Nuevo pallet</a>
     }
+</div>
 
-    <div class="card">
-
-        <div class="card-header bg-primary">
-            <div class="row">
-                <div class="col-9">
-                    <h4 class="card-title text-white" style="width:fit-content; float:left">Pallets</h4>
-                    
-                    <div class="dv-ct-palets">
-                        <b>Disponibles:</b> @ViewBag.ct_disponibles
-                        <b>Reclamados:</b> @ViewBag.ct_reclamados
-                        <b>, Transferencia:</b> @ViewBag.ct_en_transfer
-                        <b>, Baja:</b> @ViewBag.ct_de_baja
-                    </div>
-                    
-
-                </div>
-                <div class="col-3 ">
-                    <button type="button" class="btn btn-default btn-filter" onclick="$('#myFilterCollapse').collapse('toggle');">
-                        <span class="bi-filter" style="margin-right:5px;"></span>Filtro
-                    </button>
-
-                </div>
-            </div>
-
+<form asp-action="Index" method="get" class="surface filter-panel">
+    <input type="hidden" name="pageSize" value="@pageSize" />
+    <div class="filter-grid">
+        <div><label>Descripción</label><input class="form-control" name="sDescripcion" value="@ViewData["filterDescripcion"]"
+            placeholder="Buscar pallet..." /></div>
+        <div><label>Usuario</label><input class="form-control" name="sUser" value="@ViewData["filterUser"]" placeholder="Nombre del usuario..." /></div>
+        <div>
+            <label>Estado</label>
+            <select class="form-select" name="sEstado">
+                <option value="-1">Todos</option>
+                <option value="1" selected="@(currentStatus == "1")">Disponible</option>
+                <option value="2" selected="@(currentStatus == "2")">En transferencia</option>
+                <option value="3" selected="@(currentStatus == "3")">Dado de baja</option>
+            </select>
         </div>
-
-        <div class="one collapse" id="myFilterCollapse">
-
-            <form asp-action="Index" method="get">
-
-                <input type="hidden" id="hd_show_filter" name="showFilter" />
-
-                <div class="row">
-
-                    <div class="col-6">
-                        <label>Descripción:</label>
-                        <input type="text" name="sDescripcion" value="@ViewData["filterDescripcion"]" class="form-control" autocomplete="off" />
-                    </div>
-
-                    <div class="col-6">
-                        <label>Usuario:</label>
-                        <input type="text" name="sUser" value="@ViewData["filterUser"]" class="form-control" autocomplete="off" />
-                    </div>
-                   
-                </div>
-
-                <div class="row">
-                    <div class="col-6">
-                        <label>Estado</label>
-
-                        <select class="form-select" name="sEstado" value="@ViewData["filterEstado"]">
-                            @if (@currFilterEstado == "-1")
-                            {
-                                <option value="-1" selected>-cualquiera-</option>
-                            }
-                            else
-                            {
-                                <option value="-1">-cualquiera-</option>
-                            }
-                            @if (@currFilterEstado == "1")
-                            {
-                                <option value="1" selected>Disponible</option>
-                            }
-                            else
-                            {
-                                <option value="1">Disponible</option>
-                            }
-                            @if (@currFilterEstado == "2")
-                            {
-                                <option value="2" selected>En transferencia</option>
-                            }
-                            else
-                            {
-                                <option value="2">En transferencia</option>
-                            }
-                            @if (@currFilterEstado == "3")
-                            {
-                                <option value="3" selected>Dado de baja</option>
-                            }
-                            else
-                            {
-                                <option value="3">Dado de baja</option>
-                            }
-
-                        </select>
-                    </div>
-                    <div class="col-6 mt-3 text-center">
-
-
-
-                        <input type="submit"
-                               class="btn  btn-outline-primary"
-                               style="float: left; margin-left: 0px;"
-                               value="Aplicar Filtro" />
-
-                        <a asp-action="Index"
-                           class="lnk-quitar-filtro">Quitar Filtro</a>
-
-
-                    </div>
-                </div>
-
-            </form>
-
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary flex-grow-1"><i class="bi bi-search me-1"></i>Buscar</button>
+            <a class="btn btn-outline-secondary" asp-action="Index" title="Limpiar filtros"><i class="bi bi-x-lg"></i></a>
         </div>
+    </div>
+</form>
 
-        <div class="card-body" style="background-color:lightgray;">
-
-            @foreach (var palet in Model)
-            {
-                <div class="rounded mb-4 bg-white p-2">
-                    <div class="row">
-
-                        <div class="one">
-                            <span style="font-size:1.1rem; font-weight:bolder;" class="text-primary fw-bold">@palet.Descripcion</span>
-                        </div>
-
-
-                        <div class="col-6 d2-flex justify-content-center flex-column">
-
-                            <label style="width: 110px;">Fecha creación:</label>
-                            <span class="bfield">@Utils.FormatDate(palet.FechaCreacion)</span>
-
-                        </div>
-
-                        <div class="col-6 d2-flex justify-content-center flex-column">
-                            <label>Estatus:</label>
-                            <span class="badge @Utils.BadgePalet(palet.DescEstado!)">@palet.DescEstado</span>
-                        </div>
-
-                        <div class="col-6 d2-flex justify-content-center flex-column">
-                            <label style="width: 110px; float:left;">Usuario:</label>
-                            <span class="bfield">@palet.UserFullName</span>
-                        </div>
-
-
-                        <div class="one" style="padding-top: 15px;">
-
-
+<div class="surface data-card">
+    <div class="table-responsive pallet-table-view">
+        <table class="table align-middle">
+            <thead><tr><th>#</th><th>Pallet</th><th>Propietario</th><th>Estado</th><th>Fecha de creación</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="row-index">@rowNumber</td>
+                        <td><strong>@item.Descripcion</strong><small class="d-block text-muted">ID #@item.Id</small></td>
+                        <td>@item.UserFullName</td>
+                        <td><span class="badge @Utils.BadgePalet(item.DescEstado ?? "")">@item.DescEstado</span></td>
+                        <td>@Utils.FormatDate(item.FechaCreacion)</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Editar" asp-route-id="@item.Id">
+                                <i class="bi @(isAdmin ? "bi-pencil" : "bi-eye") me-1"></i>@(isAdmin ? "Editar" : "Detalles")
+                            </a>
                             @if (isAdmin)
                             {
-                                <a class="btn btn-outline-primary"
-                                    asp-controller="Palets"
-                                    asp-action="Editar"
-                                    asp-route-id="@palet.Id"
-                                    method="post">
-                                    Editar
+                                <a class="btn btn-sm btn-history"
+                                    asp-controller="Transfers"
+                                    asp-action="Index"
+                                    asp-route-palletId="@item.Id" title="Ver historial de transferencias">
+                                    <i class="bi bi-clock-history me-1"></i>Historial
                                 </a>
                             }
-                            else
-                            {
-                                <a class="btn btn-outline-primary"
-                                    asp-controller="Palets"
-                                    asp-action="Editar"
-                                    asp-route-id="@palet.Id"
-                                    method="post">
-                                    Detalles
-                                </a>
-                            }
-
-
-                            
-
-                        </div>
-
-                    </div>
-                </div>
-            }
-
+                        </td>
+                    </tr>
+                    rowNumber++;
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i>No se encontraron pallets.</div></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_PalletMobileList" model="Model" view-data="ViewData" />
+    <div class="pagination-bar">
+        <div class="page-size">
+            <span>Mostrar</span>
+            <select class="form-select form-select-sm" data-page-size>
+                @foreach (var size in new[] { 15, 25, 50 })
+                {
+                    <option value="@size" selected="@(pageSize == size)">@size</option>
+                }
+            </select>
+            <span>registros</span>
         </div>
-
-
-
+        <div class="btn-group">
+            <a class="btn btn-outline-primary @(!Model.HasPreviousPage ? "disabled" : "")"
+                asp-action="Index"
+                asp-route-pageNumber="@(Model.PageIndex - 1)"
+                asp-route-pageSize="@pageSize"
+                asp-route-filterUser="@ViewData["filterUser"]"
+                asp-route-filterDescripcion="@ViewData["filterDescripcion"]"
+                asp-route-filterEstado="@ViewData["filterEstado"]">Anterior</a>
+            <span class="btn btn-light disabled">@Model.PageIndex / @Math.Max(1, Model.TotalPages)</span>
+            <a class="btn btn-outline-primary @(!Model.HasNextPage ? "disabled" : "")"
+                asp-action="Index"
+                asp-route-pageNumber="@(Model.PageIndex + 1)"
+                asp-route-pageSize="@pageSize"
+                asp-route-filterUser="@ViewData["filterUser"]"
+                asp-route-filterDescripcion="@ViewData["filterDescripcion"]"
+                asp-route-filterEstado="@ViewData["filterEstado"]">Siguiente</a>
+        </div>
     </div>
 </div>
-
-
-@{
-    var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
-    var nextDisabled = !Model.HasNextPage ? "disabled" : "";
-}
-
-<div class="row dv-pager">
-
-    <div class="col-8">
-        <a asp-action="Index"
-           asp-route-sortOrder="@ViewData["CurrentSort"]"
-           asp-route-pageNumber="@(Model.PageIndex - 1)"
-           asp-route-filterUser="@ViewData["filterUser"]"
-           asp-route-filterDescripcion="@ViewData["filterDescripcion"]"
-           asp-route-filterEstado="@ViewData["filterEstado"]"
-           class="btn btn-outline-primary @prevDisabled">
-            Anterior
-        </a>
-        <a asp-action="Index"
-           asp-route-sortOrder="@ViewData["CurrentSort"]"
-           asp-route-pageNumber="@(Model.PageIndex + 1)"
-           asp-route-filterUser="@ViewData["filterUser"]"
-           asp-route-filterDescripcion="@ViewData["filterDescripcion"]"
-           asp-route-filterEstado="@ViewData["filterEstado"]"
-           class="btn btn-outline-primary @nextDisabled">
-            Siguiente
-        </a>
-    </div>
-
-    <div class="col-4">
-        Pagina @(Model.PageIndex) de @(Model.TotalPages)
-    </div>
-
-</div>
-
-

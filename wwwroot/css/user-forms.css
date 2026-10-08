@@ -1,0 +1,266 @@
+.user-form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, .7fr);
+    align-items: start;
+    gap: 18px;
+}
+.user-form-content {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+}
+.user-form-section,
+.user-form-aside {
+    padding: 22px;
+}
+.user-form-aside {
+    position: sticky;
+    top: 86px;
+}
+.user-form-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+.user-form-heading h2 {
+    margin: 1px 0 3px;
+    font-size: 1rem;
+    font-weight: 750;
+}
+.user-form-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .84rem;
+}
+.user-form-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+.user-form-icon-person {
+    color: var(--section-participants);
+    background: var(--section-participants-bg);
+}
+.user-form-icon-access {
+    color: var(--section-pallets);
+    background: var(--section-pallets-bg);
+}
+.user-form-icon-summary {
+    color: var(--section-dates);
+    background: var(--section-dates-bg);
+}
+.user-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+}
+.user-form-span-2 {
+    grid-column: 1 / -1;
+}
+.user-form .field {
+    min-width: 0;
+}
+.user-form .field label:not(.user-status-toggle) {
+    display: inline-block;
+    margin-bottom: 6px;
+    font-size: .84rem;
+    font-weight: 650;
+}
+.user-form .form-control,
+.user-form .form-select {
+    min-height: 44px;
+}
+.required-mark {
+    color: var(--danger);
+}
+.user-address {
+    min-height: 92px;
+    resize: vertical;
+}
+.user-status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f8fafc;
+    cursor: pointer;
+}
+.user-status-toggle .form-check-input {
+    flex: 0 0 auto;
+    margin: 0;
+}
+.user-status-toggle span {
+    display: flex;
+    flex-direction: column;
+}
+.user-status-toggle strong {
+    font-size: .84rem;
+}
+.user-status-toggle small {
+    color: var(--muted);
+    font-size: .75rem;
+}
+.user-form-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 12px;
+    border-radius: 9px;
+    background: #f4f8fc;
+    color: var(--sidebar);
+}
+.user-form-notice i {
+    flex: 0 0 auto;
+    margin-top: 1px;
+}
+.user-form-notice p {
+    margin: 0;
+    font-size: .8rem;
+}
+.user-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 22px;
+}
+.password-form-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, .65fr);
+}
+.user-account-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #f8fafc;
+}
+.user-account-avatar {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--section-participants);
+    background: var(--section-participants-bg);
+}
+.user-account-card > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.user-account-card strong,
+.user-account-card small {
+    overflow-wrap: anywhere;
+}
+.user-account-card small {
+    color: var(--muted);
+}
+.password-input {
+    position: relative;
+}
+.password-input .form-control {
+    padding-right: 45px;
+}
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    color: var(--muted);
+    background: transparent;
+    transform: translateY(-50%);
+}
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    color: var(--primary);
+    background: #f1f5f9;
+}
+
+@media (max-width: 991px) {
+    .user-form-layout,
+    .password-form-layout {
+        grid-template-columns: 1fr;
+    }
+    .user-form-aside {
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .user-form-section,
+    .user-form-aside {
+        padding: 16px;
+    }
+    .user-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .user-form-span-2 {
+        grid-column: auto;
+    }
+    .user-form-actions {
+        flex-direction: column-reverse;
+    }
+    .user-form-actions .btn {
+        width: 100%;
+    }
+}
+.profile-readonly-field {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    background: #f8fafc;
+}
+.profile-readonly-field span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-readonly-field small {
+    margin-left: auto;
+    font-size: .72rem;
+    white-space: nowrap;
+}
+.profile-account-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+.profile-account-summary > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.profile-account-summary strong,
+.profile-account-summary small {
+    overflow-wrap: anywhere;
+}
+.profile-account-summary small {
+    color: var(--muted);
+}

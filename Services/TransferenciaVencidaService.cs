@@ -166,25 +166,33 @@ namespace PaletsWebApp.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Procesa lo vencido al iniciar, por si el hosting estuvo suspendido
+            // o se reinició durante la ejecución programada.
+            await ProcesarVencidasAsync(stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(TiempoHastaMedianocheEcuador(), stoppingToken);
+                await ProcesarVencidasAsync(stoppingToken);
 
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var service = scope.ServiceProvider.GetRequiredService<TransferenciaVencidaService>();
-                    await service.ProcesarAsync(stoppingToken);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al procesar transferencias vencidas.");
-                }
+            }
+        }
 
+        private async Task ProcesarVencidasAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<TransferenciaVencidaService>();
+                await service.ProcesarAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // El cierre de la aplicación cancela normalmente el proceso.
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al procesar transferencias vencidas.");
             }
         }
 

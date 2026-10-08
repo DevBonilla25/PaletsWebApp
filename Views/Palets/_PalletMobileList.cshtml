@@ -1,0 +1,50 @@
+@using PaletsWebApp.Utilites
+@model PaginatedList<PaletsWebApp.Models.View_Palet>
+
+@{
+    var pageSize = (int?)ViewData["PageSize"] ?? 15;
+    var rowNumber = ((Model.PageIndex - 1) * pageSize) + 1;
+    var canManagePalets = (bool?)ViewData["CanManagePalets"] ?? false;
+}
+
+<div class="pallet-mobile-list">
+    @foreach (var item in Model)
+    {
+        <article class="pallet-mobile-row">
+            <span class="row-index">#@rowNumber</span>
+            <strong class="pallet-mobile-description" title="@item.Descripcion">
+                @item.Descripcion
+            </strong>
+            <span class="badge @Utils.BadgePalet(item.DescEstado ?? "")">
+                @item.DescEstado
+            </span>
+            <a class="btn btn-sm btn-outline-primary pallet-mobile-icon"
+               asp-action="Editar"
+               asp-route-id="@item.Id"
+               title="Ver detalle"
+               aria-label="Ver detalle de @item.Descripcion">
+                <i class="bi bi-eye"></i>
+            </a>
+            @if (canManagePalets)
+            {
+                <a class="btn btn-sm btn-history pallet-mobile-icon"
+                   asp-controller="Transfers"
+                   asp-action="Index"
+                   asp-route-palletId="@item.Id"
+                   title="Ver historial"
+                   aria-label="Ver historial de @item.Descripcion">
+                    <i class="bi bi-clock-history"></i>
+                </a>
+            }
+        </article>
+        rowNumber++;
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            No se encontraron pallets.
+        </div>
+    }
+</div>

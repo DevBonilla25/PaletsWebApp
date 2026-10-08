@@ -1,79 +1,138 @@
-﻿@model PaletsWebApp.ViewModels.TransferenciaVM
+@model PaletsWebApp.ViewModels.TransferenciaVM
+<link rel="stylesheet" href="~/css/transfer-forms.css" asp-append-version="true" />
+@using System.Text.Json
 
 @{
-    ViewData["Title"] = "Crear Transferecia";
-    
+    ViewData["Title"] = "Nueva transferencia";
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Transfers">Regresar</a>
-    <div class="card">
-        <div class="card-header bg-primary">
-            <h4 class="card-title text-white">Nueva Transferencia</h4>
-        </div>
-        <div class="card-body">
-            <form asp-action="Create" asp-controller="Transfers" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <div class="row mb-2">
-                    <div class="col-9">
-                        <div class="mb-2">
-                            <label>Transferir para</label>
-
-                            @Html.DropDownListFor(m=> m.IdUserRecibe,new SelectList(Model.UserList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="IdUserRecibe" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-9">
-                        <div class="mb-2">
-                            <input type="hidden" asp-for="JsonPalets" />
-                            <label>Seleccione los pallets a transferir</label>
-                            @if (ViewBag.PalletRequired)
-                            {
-                                <br />
-                                <label style="color:red;">Por lo menos un Pallet es requerido</label>
-                            }
-
-                            @foreach(var palet in Model.Palets!)
-                            {
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           value="@palet.Id"
-                                           id="check_@palet.Id"
-                                           name="UqChecked"
-                                           checked="@palet.IsSelected" />
-                                    <label class="form-check-label" for="check_@palet.Id">
-                                        @palet.Descripcion
-                                    </label>
-                                </div>
-                            }
-
-                        </div>
-
-                    </div>
-
-                </div>
-                
-                <div class="mb-2">
-                            
-                    <div class="one">
-                        <button type="submit"
-                                class="btn btn-primary"
-                                id="btnAceptar"
-                                name="submit" value="aceptar">
-                            Guardar
-                        </button>
-
-                    </div>
-                            
-                    
-                </div>
-            </form>
-        </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Nueva transferencia</h1>
+        <p class="page-subtitle">Selecciona el receptor y los pallets que vas a transferir.</p>
     </div>
+    <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left me-2"></i>Cancelar</a>
 </div>
 
-@section Scripts{
-    <partial name="_ValidationScriptsPartial"/>
-   
+<form asp-action="Create" asp-controller="Transfers" method="post" class="transfer-create-form">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <input type="hidden" asp-for="JsonPalets" />
+
+    <div class="transfer-form-grid">
+        <div class="d-grid gap-3">
+            <section class="surface panel transfer-section">
+                <div class="section-heading">
+                    <span class="section-icon"><i class="bi bi-person"></i></span>
+                    <div><h2>Receptor</h2><p>Busca por nombre y selecciona a quién enviarás los pallets.</p></div>
+                </div>
+                <label asp-for="IdUserRecibe">Usuario que recibe</label>
+                <select asp-for="IdUserRecibe" asp-items="Model.UserList" id="receiverSelect" class="form-select">
+                    <option value=""></option>
+                </select>
+                <span asp-validation-for="IdUserRecibe" class="text-danger"></span>
+            </section>
+
+            <section class="surface panel transfer-section">
+                <div class="section-heading">
+                    <span class="section-icon"><i class="bi bi-box-seam"></i></span>
+                    <div><h2>Pallets disponibles</h2><p>Busca y marca uno o varios pallets de tu inventario.</p></div>
+                </div>
+                <div class="pallet-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="palletSearch" class="form-control" placeholder="Buscar por descripción o número..." autocomplete="off" />
+                </div>
+                @if (ViewBag.PalletRequired == true)
+                {
+                    <div class="text-danger mt-2">Selecciona por lo menos un pallet.</div>
+                }
+                <div class="pallet-picker" id="palletPicker">
+                    @foreach (var pallet in Model.Palets)
+                    {
+                        <label class="pallet-option" data-search="@pallet.Descripcion.ToLowerInvariant()">
+                            <input class="form-check-input pallet-checkbox" type="checkbox" value="@pallet.Id" name="UqChecked" checked="@pallet.IsSelected" />
+                            <span class="pallet-option-copy"><strong>@pallet.Descripcion</strong><small>ID #@pallet.Id</small></span>
+                            <span class="badge @PaletsWebApp.Utilites.Utils.BadgePalet("Disponible")">Disponible</span>
+                        </label>
+                    }
+                    @if (!Model.Palets.Any())
+                    {
+                        <div class="empty-state"><i class="bi bi-inbox"></i>No tienes pallets disponibles para transferir.</div>
+                    }
+                </div>
+                <div id="noPalletResults" class="empty-state d-none"><i class="bi bi-search"></i>No se encontraron pallets.</div>
+            </section>
+        </div>
+
+        <aside class="surface panel transfer-summary">
+            <div class="section-heading">
+                <span class="section-icon"><i class="bi bi-check2-square"></i></span>
+                <div><h2>Resumen</h2><p>Revisa la selección antes de guardar.</p></div>
+            </div>
+            <div class="summary-block"><span>Receptor</span><strong id="receiverSummary">Sin seleccionar</strong></div>
+            <div class="summary-block"><span>Pallets seleccionados</span><strong id="palletCount">0</strong></div>
+            <div id="selectedPallets" class="selected-pallets"></div>
+            <div class="form-actions mt-4">
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-arrow-left-right me-2"></i>Crear transferencia</button>
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        (() => {
+            const receiver = new TomSelect('#receiverSelect', {
+                create: false,
+                maxItems: 1,
+                allowEmptyOption: false,
+                placeholder: 'Escribe un nombre para buscar...',
+                searchField: ['text'],
+                onFocus() {
+                    if (!this.getValue()) {
+                        this.control_input.value = '';
+                        this.refreshOptions(true);
+                    }
+                },
+                render: { no_results: () => '<div class="no-results">No se encontraron usuarios</div>' }
+            });
+            const search = document.getElementById('palletSearch');
+            const options = [...document.querySelectorAll('.pallet-option')];
+            const checkboxes = [...document.querySelectorAll('.pallet-checkbox')];
+            const selected = document.getElementById('selectedPallets');
+            const count = document.getElementById('palletCount');
+            const receiverSummary = document.getElementById('receiverSummary');
+
+            function updateSummary() {
+                selected.replaceChildren();
+                const checked = checkboxes.filter(item => item.checked);
+                count.textContent = checked.length;
+                checked.forEach(item => {
+                    const chip = document.createElement('span');
+                    chip.className = 'selection-chip';
+                    chip.textContent = item.closest('.pallet-option').querySelector('strong').textContent;
+                    selected.appendChild(chip);
+                });
+                if (!checked.length) selected.innerHTML = '<small class="text-muted">Aún no has seleccionado pallets.</small>';
+                const option = receiver.options[receiver.getValue()];
+                receiverSummary.textContent = option?.text || 'Sin seleccionar';
+            }
+            search.addEventListener('input', () => {
+                const term = search.value.trim().toLowerCase();
+                let visible = 0;
+                options.forEach(option => {
+                    const show = option.dataset.search.includes(term);
+                    option.classList.toggle('d-none', !show);
+                    if (show) visible++;
+                });
+                document.getElementById('noPalletResults').classList.toggle('d-none', visible > 0);
+            });
+            checkboxes.forEach(item => item.addEventListener('change', updateSummary));
+            receiver.on('change', updateSummary);
+            updateSummary();
+        })();
+    </script>
 }
