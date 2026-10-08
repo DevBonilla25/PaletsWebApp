@@ -312,7 +312,6 @@ namespace PaletsWebApp.Controllers
             //reg.FechaEnvio = DateTime.Now;
 
             // Cambiar DateTime.Now por DateTime.UtcNow para Ecuador
-            reg.CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss");
             reg.FechaEnvio = DateTime.UtcNow; // Guardar en UTC
             reg.FechaLimiteAceptacion = DateTime.UtcNow.AddHours(48);
             reg.ApplicationUserIdEnvia = loggedInUser!.Id;
@@ -323,6 +322,7 @@ namespace PaletsWebApp.Controllers
             await _context.Transferencias!.AddAsync(reg);
 
             await _context.SaveChangesAsync();
+            reg.CodigoInterno = $"TRF-{reg.Id}";
 
             var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
             var estadoDetallePendiente = await _detalleTransferenciaService
@@ -598,7 +598,6 @@ namespace PaletsWebApp.Controllers
             var reg = new Transferencia
             {
                 // Cambiar DateTime.Now por DateTime.UtcNow para Ecuador
-                CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss"),
                 FechaEnvio = DateTime.UtcNow, // Guardar en UTC
                 ApplicationUserIdEnvia = loggedInUser!.Id,
                 ApplicationUserIdRecibe = ReceptorAdministradores,
@@ -621,6 +620,7 @@ namespace PaletsWebApp.Controllers
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+            reg.CodigoInterno = $"TRF-{reg.Id}";
 
             await _reclamoService.NotificarSupervisoresAsync(loggedInUser, reg.Id);
 

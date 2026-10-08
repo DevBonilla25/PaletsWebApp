@@ -615,7 +615,6 @@ namespace PaletsWebApp.Controllers
 
             var reg = new Transferencia();
 
-            reg.CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss");
             reg.FechaEnvio = DateTime.UtcNow;
             reg.FechaLimiteAceptacion = DateTime.UtcNow.AddHours(48);
             reg.ApplicationUserIdEnvia = regVM.IdUserEnvia;
@@ -636,6 +635,7 @@ namespace PaletsWebApp.Controllers
 
             await _context.Transferencias!.AddAsync(reg);
             await _context.SaveChangesAsync();
+            reg.CodigoInterno = $"TRF-{reg.Id}";
 
             var list_palets = JsonSerializer.Deserialize<List<int>>(regVM.JsonPalets!) ?? new List<int>();
             var newEstadoPalet = await _context.Catalogos!.Where(x => x.Categoria == "estado_palets" && x.Descripcion!.ToLower() == "en transferencia").SingleAsync();
@@ -781,7 +781,6 @@ namespace PaletsWebApp.Controllers
 
             var reg = new Transferencia
             {
-                CodigoInterno = DateTime.UtcNow.ToString("yyyy_MM_dd_HH_mm_ss"),
                 FechaEnvio = DateTime.UtcNow,
                 ApplicationUserIdEnvia = usuario.Id,
                 ApplicationUserIdRecibe = "Administradores",
@@ -791,6 +790,7 @@ namespace PaletsWebApp.Controllers
 
             await _context.Transferencias!.AddAsync(reg);
             await _context.SaveChangesAsync();
+            reg.CodigoInterno = $"TRF-{reg.Id}";
             await _context.Detalles!.AddRangeAsync(palets.Select(x => new Detalle
             {
                 IdPalet = x.Id,
