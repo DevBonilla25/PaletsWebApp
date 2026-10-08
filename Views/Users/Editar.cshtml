@@ -1,190 +1,135 @@
-﻿@model PaletsWebApp.ViewModels.RegisterUserVM
+@model PaletsWebApp.ViewModels.RegisterUserVM
 
 @{
-    ViewData["Title"] = "Editar Usuario";
-
-    bool isValidRol = Model.Rol != null ? true : false;
-    bool isValidDocument = Model.TipoDocumento != null ? true : false;
-
+    ViewData["Title"] = "Editar usuario";
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Users">Regresar</a>
-    <div class="card">
-        <div class="card-header bg-primary">
-            <h4 class="card-title text-white">Editar Usuario</h4>
-        </div>
-        <div class="card-body">
-            
-             <form asp-action="Editar" asp-controller="Users">
+<link rel="stylesheet" href="~/css/user-forms.css" asp-append-version="true" />
 
-                <input type="hidden" asp-for="Id" />
-
-                <div class="row">
-
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            @if (string.IsNullOrEmpty(@Model.Nombres))
-                            {
-                                <label style="color:red;">Nombres <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Nombres</label>
-                            }
-
-                            <input type="text" asp-for="Nombres" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Nombres" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="mb-2">
-                            
-                            @if (string.IsNullOrEmpty(@Model.Apellidos))
-                            {
-                                <label style="color:red;">Apellidos <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Apellidos</label>
-                            }
-
-                            <input type="text" asp-for="Apellidos" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Apellidos" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row">
-                    <div class="col-6">
-                        <div class="mb-2">
-                           
-                            @if (string.IsNullOrEmpty(@Model.TipoDocumento))
-                            {
-                                <label style="color:red;">Tipo de documento <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Tipo de documento</label>
-                            }
-
-                            @Html.DropDownListFor(m=> m.TipoDocumento,new SelectList(Model.TiposDocumentosList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="TipoDocumento" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            @if (string.IsNullOrEmpty(@Model.Documento))
-                            {
-                                <label style="color:red;">Documento <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Documento</label>
-                            }
-
-                            <input type="text" asp-for="Documento" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Documento" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="col-6">
-                        <div class="mb-2">
-                            <label>Email</label>
-                            <input type="text" asp-for="Email" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Email" autocomplete="off" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="mb-2">
-                            <label>Teléfono</label>
-                            <input type="text" asp-for="Telefono" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Telefono" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="col-12">
-                        <div class="mb-2">
-                            <label>Dirección</label>
-                            <textarea id="richEditor" asp-for="Direccion" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Direccion" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="col-12">
-                        <div class="mb-2">
-                            <label>Razon Social</label>
-
-                            <input type="text" asp-for="RazonSocial" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="RazonSocial" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="col-6">
-                        <div class="mb-2">
-                            @if (string.IsNullOrEmpty(@Model.Rol))
-                            {
-                                <label style="color:red;">Rol <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Rol</label>
-                            }
-                            @Html.DropDownListFor(m=> m.Rol,new SelectList(Model.RolesList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="Rol" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            <label class="form-check-label">
-
-                                @Html.CheckBoxFor(x => x.Activo, Model.Activo)
-                                Activo
-                            </label>
-                            <span asp-validation-for="Activo"  class="text-danger"></span>
-
-                        </div>
-                    </div>
-
-                </div>
-               
-
-                <div class="mb-2">
-
-                    <button type="submit"
-                            class="btn btn-primary"
-                            id="btnAceptar"
-                            name="submit" value="aceptar">
-                        Guardar
-                    </button>
-
-                </div>
-            </form>
-        </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Editar usuario</h1>
+        <p class="page-subtitle">Actualiza la información, permisos y estado del usuario.</p>
     </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" asp-controller="Users">
+        <i class="bi bi-arrow-left me-2"></i>Cancelar
+    </a>
 </div>
 
+<form asp-action="Editar" asp-controller="Users" method="post" class="user-form">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="user-form-layout">
+        <div class="user-form-content">
+            <section class="surface user-form-section">
+                <div class="user-form-heading">
+                    <span class="user-form-icon user-form-icon-person"><i class="bi bi-person"></i></span>
+                    <div>
+                        <h2>Información personal</h2>
+                        <p>Datos de identificación y contacto.</p>
+                    </div>
+                </div>
+
+                <div class="user-form-grid">
+                    <div class="field">
+                        <label asp-for="Nombres">Nombres <span class="required-mark">*</span></label>
+                        <input asp-for="Nombres" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="Nombres" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Apellidos">Apellidos <span class="required-mark">*</span></label>
+                        <input asp-for="Apellidos" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="Apellidos" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="TipoDocumento">Tipo de documento <span class="required-mark">*</span></label>
+                        <select asp-for="TipoDocumento" asp-items="Model.TiposDocumentosList" class="form-select">
+                            <option value="">Selecciona un tipo</option>
+                        </select>
+                        <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Documento">Documento <span class="required-mark">*</span></label>
+                        <input asp-for="Documento" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="Documento" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Email">Correo electrónico <span class="required-mark">*</span></label>
+                        <input asp-for="Email" type="email" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Telefono">Teléfono</label>
+                        <input asp-for="Telefono" type="tel" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                    </div>
+                    <div class="field user-form-span-2">
+                        <label asp-for="Direccion">Dirección</label>
+                        <textarea asp-for="Direccion" class="form-control user-address" rows="3"></textarea>
+                        <span asp-validation-for="Direccion" class="text-danger"></span>
+                    </div>
+                    <div class="field user-form-span-2">
+                        <label asp-for="RazonSocial">Razón social</label>
+                        <input asp-for="RazonSocial" autocomplete="off" class="form-control" />
+                        <span asp-validation-for="RazonSocial" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface user-form-section">
+                <div class="user-form-heading">
+                    <span class="user-form-icon user-form-icon-access"><i class="bi bi-shield-check"></i></span>
+                    <div>
+                        <h2>Permisos y estado</h2>
+                        <p>Controla el nivel de acceso y disponibilidad de la cuenta.</p>
+                    </div>
+                </div>
+                <div class="user-form-grid user-form-grid-status">
+                    <div class="field">
+                        <label asp-for="Rol">Rol <span class="required-mark">*</span></label>
+                        <select asp-for="Rol" asp-items="Model.RolesList" class="form-select">
+                            <option value="">Selecciona un rol</option>
+                        </select>
+                        <span asp-validation-for="Rol" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label>Estado de la cuenta</label>
+                        <label class="user-status-toggle">
+                            <input asp-for="Activo" class="form-check-input" />
+                            <span>
+                                <strong>Usuario activo</strong>
+                                <small>Permite el acceso al sistema.</small>
+                            </span>
+                        </label>
+                        <span asp-validation-for="Activo" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="surface user-form-aside">
+            <div class="user-form-heading">
+                <span class="user-form-icon user-form-icon-summary"><i class="bi bi-pencil-square"></i></span>
+                <div>
+                    <h2>Guardar cambios</h2>
+                    <p>La actualización se aplicará a esta cuenta.</p>
+                </div>
+            </div>
+            <div class="user-form-notice">
+                <i class="bi bi-info-circle"></i>
+                <p>Los datos de acceso y la contraseña se administran por separado para evitar cambios accidentales.</p>
+            </div>
+            <div class="user-form-actions">
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+                <button type="submit" class="btn btn-primary" id="btnAceptar" name="submit" value="aceptar">
+                    <i class="bi bi-floppy me-1"></i>Guardar cambios
+                </button>
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

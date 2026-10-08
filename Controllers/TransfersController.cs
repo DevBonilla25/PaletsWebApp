@@ -915,6 +915,7 @@ namespace PaletsWebApp.Controllers
             var regVM = await getTransferVM(id);
 
             ViewBag.estadoRecibido = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "recibido").SingleOrDefault()!.Id.ToString();
+            ViewBag.estadoReclamado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "reclamado").SingleOrDefault()?.Id.ToString() ?? string.Empty;
             ViewBag.estadoRechazado = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "rechazado").SingleOrDefault()!.Id.ToString();
             ViewBag.estadoPorRecibir = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por recibir").SingleOrDefault()!.Id.ToString();
             ViewBag.estadoPorReclamar = listEstadosTrans.Where(x => x.Descripcion!.ToLower() == "por reclamar").SingleOrDefault()!.Id.ToString();

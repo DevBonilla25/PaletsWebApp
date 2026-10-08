@@ -1,117 +1,155 @@
-﻿@using Microsoft.AspNetCore.Identity;
-@inject UserManager<ApplicationUser> _userManager;
-
+@using Microsoft.AspNetCore.Identity
+@using PaletsWebApp.Utilites
+@inject UserManager<ApplicationUser> UserManager
 @model PaletsWebApp.ViewModels.PaletVM
 
 @{
-    ViewData["Title"] = "Editar Pallet";
+    var loggedInUser = await UserManager.GetUserAsync(User);
+    var roles = loggedInUser == null
+        ? new List<string>()
+        : (await UserManager.GetRolesAsync(loggedInUser)).ToList();
+    var isAdmin = roles.Contains("Admin") || roles.Contains("Supervisor");
+    var inTransfer = string.Equals(Model.DescEstado, "En transferencia", StringComparison.OrdinalIgnoreCase);
+    var canEdit = isAdmin && !inTransfer;
+    var initials = string.Join("", (Model.ApplicationUserName ?? string.Empty)
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2)
+        .Select(part => char.ToUpperInvariant(part[0])));
 
-    bool enTransferencia = Model.DescEstado!.ToLower() == "en transferencia" ? true : false;
-    bool estadoInvalido = string.IsNullOrEmpty(Model.Estado) || Model.Estado == "-1" ? true : false;
-
-    var loggedInUser = _userManager.Users?.FirstOrDefault(x => x.UserName == User.Identity!.Name);
-
-    bool isAdmin = false;
-    if (loggedInUser != null &&
-        (await _userManager.IsInRoleAsync(loggedInUser, "Admin") ||
-         await _userManager.IsInRoleAsync(loggedInUser, "Supervisor")))
-    {
-        isAdmin = true;
-    }
-
-
+    ViewData["Title"] = canEdit ? "Editar pallet" : "Detalle del pallet";
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Palets">Regresar</a>
-    <div class="card">
-        <div class="card-header bg-primary">
-            <h4 class="card-title text-white">Editar Pallet</h4>
+<link rel="stylesheet" href="~/css/pallet-forms.css" asp-append-version="true" />
+
+<div class="page-header pallet-edit-header">
+    <div>
+        <div class="pallet-title-line">
+            <h1 class="page-title">@(canEdit ? "Editar pallet" : "Detalle del pallet")</h1>
+            <span class="badge @Utils.BadgePalet(Model.DescEstado ?? string.Empty)">@Model.DescEstado</span>
         </div>
-        <div class="card-body">
-            <form asp-action="Editar" asp-controller="Palets" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <div class="row mb-2">
-                    <div class="col-12">
-                    <div class="mb-2">
-
-                            @if (string.IsNullOrEmpty(@Model.Descripcion))
-                            {
-                                <label style="color:red;">Descripción <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Descripción</label>
-                            }
-                        
-                        <input type="text" asp-for="Descripcion" class="form-control" />
-                        <span asp-validation-for="Descripcion" class="text-danger"></span>
-                    </div>
-                    <div class="mb-2">
-                            <label>Observaciones</label>
-                        <textarea id="richEditor" asp-for="Observaciones" class="form-control" rows="5"></textarea>
-                        <span asp-validation-for="Observaciones" class="text-danger"></span>
-                    </div>
-                    <div class="mb-2">
-                        <label>Usuario Actual</label>
-                        <input type="text" asp-for="ApplicationUserName" ReadOnly="true" class="form-control" />
-                        
-                    </div>
-                    <div class="mb-2">
-                        <label>Rol</label>
-                        <input type="text" asp-for="RolUser" ReadOnly="true" class="form-control" />
-                    </div>
-                    <div class="mb-2">
-
-                            @if (@estadoInvalido)
-                            {
-                                <label style="color:red;">Estado actual <i>(requerido)</i></label>
-                            }
-                            else
-                            {
-                                <label>Estado actual</label>
-                            }
-
-                        
-                            @{
-                                if (enTransferencia)
-                                {
-                                    <input type="text" asp-for="DescEstado" ReadOnly="true" class="form-control" />
-                                }
-                                else
-                                {
-                                    @Html.DropDownListFor(m=> m.Estado,new SelectList(Model.EstatusList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                                    <span asp-validation-for="Estado" class="text-danger"></span>
-                                }
-                            }
-                    </div>
-    
-                </div>
-                </div>
-                
-                @{
-                    if (!enTransferencia && isAdmin)
-                    {
-                        <div class="row">
-                            <div class="one">
-                                <button type="submit"
-                                        class="btn btn-primary"
-                                        id="btnAceptar">
-                                    Guardar
-                                </button>
-
-                            </div>
-                        </div>
-                    }
-                }
-
-            </form>
-        </div>
+        <p class="page-subtitle">Pallet ID #@Model.Id</p>
     </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" asp-controller="Palets">
+        <i class="bi bi-arrow-left me-2"></i>Volver
+    </a>
 </div>
 
-@section Scripts{
-    <partial name="_ValidationScriptsPartial"/>
-   
-}
+<form asp-action="Editar" asp-controller="Palets" method="post" class="pallet-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ApplicationUserId" />
 
+    <div class="pallet-form-layout">
+        <section class="surface pallet-form-section">
+            <div class="pallet-form-heading">
+                <span class="pallet-form-icon pallet-form-icon-main">
+                    <img src="~/icons_menu_palets.png" alt="" />
+                </span>
+                <div>
+                    <h2>Información del pallet</h2>
+                    <p>@(canEdit ? "Actualiza los datos permitidos del registro." : "Consulta los datos actuales del registro.")</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label asp-for="Descripcion">Descripción <span class="required-mark">*</span></label>
+                @if (canEdit)
+                {
+                    <input asp-for="Descripcion" class="form-control" />
+                }
+                else
+                {
+                    <input asp-for="Descripcion" class="form-control" readonly />
+                }
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Estado">Estado actual <span class="required-mark">*</span></label>
+                @if (canEdit)
+                {
+                    <select asp-for="Estado" asp-items="Model.EstatusList" class="form-select">
+                        <option value="">Selecciona un estado...</option>
+                    </select>
+                    <span asp-validation-for="Estado" class="text-danger"></span>
+                }
+                else
+                {
+                    <input type="hidden" asp-for="Estado" />
+                    <div class="pallet-readonly-value">
+                        <span class="badge @Utils.BadgePalet(Model.DescEstado ?? string.Empty)">@Model.DescEstado</span>
+                    </div>
+                }
+            </div>
+
+            <div class="field mb-0">
+                <label asp-for="Observaciones">Observaciones</label>
+                @if (canEdit)
+                {
+                    <textarea asp-for="Observaciones"
+                              class="form-control pallet-notes"
+                              rows="5"
+                              placeholder="Información adicional sobre el pallet..."></textarea>
+                }
+                else
+                {
+                    <textarea asp-for="Observaciones"
+                              class="form-control pallet-notes"
+                              rows="5"
+                              readonly
+                              placeholder="Sin observaciones registradas."></textarea>
+                }
+                <span asp-validation-for="Observaciones" class="text-danger"></span>
+            </div>
+        </section>
+
+        <aside class="surface pallet-form-aside">
+            <div class="pallet-form-heading">
+                <span class="pallet-form-icon pallet-form-icon-owner">
+                    <img src="~/icons_menu_users.png" alt="" />
+                </span>
+                <div>
+                    <h2>Propietario actual</h2>
+                    <p>Usuario responsable del pallet.</p>
+                </div>
+            </div>
+
+            <div class="pallet-owner-card">
+                <span class="avatar">@(string.IsNullOrWhiteSpace(initials) ? "U" : initials)</span>
+                <span>
+                    <strong>@Model.ApplicationUserName</strong>
+                    <small>@Model.RolUser</small>
+                </span>
+            </div>
+
+            @if (inTransfer)
+            {
+                <div class="pallet-form-notice pallet-form-warning">
+                    <i class="bi bi-lock"></i>
+                    <p>Este pallet está en transferencia y no puede editarse hasta que el movimiento finalice.</p>
+                </div>
+            }
+            else if (!isAdmin)
+            {
+                <div class="pallet-form-notice">
+                    <i class="bi bi-eye"></i>
+                    <p>Tienes acceso de consulta. La edición está disponible para supervisores y administradores.</p>
+                </div>
+            }
+
+            <div class="pallet-form-actions">
+                <a class="btn btn-outline-secondary" asp-action="Index">Volver</a>
+                @if (canEdit)
+                {
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-floppy me-1"></i>Guardar cambios
+                    </button>
+                }
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

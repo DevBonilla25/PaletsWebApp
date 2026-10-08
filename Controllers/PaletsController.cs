@@ -161,8 +161,20 @@ namespace PaletsWebApp.Controllers
         //[ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PaletVM vm)
         {
-            if (!ModelState.IsValid || string.IsNullOrEmpty(vm.Descripcion)) { 
-                return View(vm); 
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(vm.Descripcion))
+            {
+                vm.UserList = await _context.UsersView!
+                    .AsNoTracking()
+                    .Where(user => user.Activo == true)
+                    .OrderBy(user => user.Apellidos)
+                    .Select(user => new SelectListItem
+                    {
+                        Value = user.Id,
+                        Text = user.Apellidos + " " + user.Nombres + " (" + user.RolName + ")",
+                        Selected = user.Id == vm.ApplicationUserId
+                    })
+                    .ToListAsync();
+                return View(vm);
             }
 
             var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == User.Identity!.Name);

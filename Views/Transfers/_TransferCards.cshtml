@@ -1,0 +1,61 @@
+@using PaletsWebApp.Utilites
+@model PaginatedList<PaletsWebApp.Models.View_Transferencia>
+
+@{
+    var pageSize = (int?)ViewData["PageSize"] ?? 15;
+    var rowNumber = ((Model.PageIndex - 1) * pageSize) + 1;
+}
+
+<div class="transfer-card-list">
+    @foreach (var item in Model)
+    {
+        <article class="transfer-record-card">
+            <header class="transfer-record-header">
+                <div class="transfer-record-identity">
+                    <span class="transfer-record-index">#@rowNumber</span>
+                    <span>
+                        <strong>@item.CodigoInterno</strong>
+                        <small>ID #@item.Id</small>
+                    </span>
+                </div>
+                <span class="badge @Utils.BadgeTransfer(item.DescEstado ?? "")">
+                    @item.DescEstado
+                </span>
+            </header>
+
+            <dl class="transfer-record-details">
+                <div>
+                    <dt><i class="bi bi-box-arrow-up-right"></i>Envía</dt>
+                    <dd>@item.UserEnviaFullName</dd>
+                </div>
+                <div>
+                    <dt><i class="bi bi-box-arrow-in-down-left"></i>Recibe</dt>
+                    <dd>@item.UserRecibeFullName</dd>
+                </div>
+                <div>
+                    <dt><i class="bi bi-calendar-event"></i>Fecha de envío</dt>
+                    <dd>@Utils.FormatDate(item.FechaEnvio)</dd>
+                </div>
+                <div>
+                    <dt><i class="bi bi-calendar-check"></i>Fecha de recepción</dt>
+                    <dd>@(item.FechaRecibo > DateTime.MinValue.AddYears(1) ? Utils.FormatDate(item.FechaRecibo) : "—")</dd>
+                </div>
+            </dl>
+
+            <a class="btn btn-outline-primary transfer-record-action"
+               asp-action="Detalle"
+               asp-route-id="@item.Id">
+                <i class="bi bi-eye me-1"></i>Detalles
+            </a>
+        </article>
+        rowNumber++;
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state transfer-card-empty">
+            <i class="bi bi-arrow-left-right"></i>
+            No se encontraron transferencias.
+        </div>
+    }
+</div>

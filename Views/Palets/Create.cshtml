@@ -1,61 +1,120 @@
 ﻿@model PaletsWebApp.ViewModels.PaletVM
 
 @{
-    ViewData["Title"] = "Crear Pallet";
+    ViewData["Title"] = "Crear pallet";
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Palets">Regresar</a>
-    <div class="card">
-        <div class="card-header bg-primary">
-            <h4 class="card-title text-white">Nuevo Pallet</h4>
-        </div>
-        <div class="card-body">
-            <form asp-action="Create" asp-controller="Palets" enctype="multipart/form-data">
-               @* <div asp-validation-summary="ModelOnly" class="text-danger"></div>*@
-                <div class="row mb-2">
-                    <div class="col-12">
-                        <div class="mb-2">
-                            <label>Descripción</label>
-                            <input type="text" asp-for="Descripcion" class="form-control" />
-                            <span  asp-validation-for="Descripcion"  class="text-danger"></span>
-                        </div>
-                        <div class="mb-2">
-                            <label>Observaciones</label>
-                            <textarea id="richEditor" asp-for="Observaciones" class="form-control" rows="8"></textarea>
-                            <span asp-validation-for="Observaciones" class="text-danger"></span>
-                        </div>
+<link rel="stylesheet" href="~/css/pallet-forms.css" asp-append-version="true" />
 
-                        
-                        <div class="mb-2">
-                            <label>Asignar para</label>
-
-                            @Html.DropDownListFor(m=> m.ApplicationUserId,new SelectList(Model.UserList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="ApplicationUserId" class="text-danger"></span>
-                        </div>
-                        
-
-                    
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="one">
-                        <button type="submit"
-                                class="btn btn-primary"
-                                id="btnAceptar">
-                                Guardar
-                        </button>
-
-                    </div>
-                </div>
-
-            </form>
-        </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Nuevo pallet</h1>
+        <p class="page-subtitle">Registra el pallet y asignalo a un usuario del sistema.</p>
     </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" asp-controller="Palets">
+        <i class="bi bi-arrow-left me-2"></i>Cancelar
+    </a>
 </div>
 
-@section Scripts{
-    <partial name="_ValidationScriptsPartial"/>
-   
+<form asp-action="Create" asp-controller="Palets" method="post" class="pallet-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="pallet-form-layout">
+        <section class="surface pallet-form-section">
+            <div class="pallet-form-heading">
+                <span class="pallet-form-icon pallet-form-icon-main">
+                    <img src="~/icons_menu_palets.png" alt="" />
+                </span>
+                <div>
+                    <h2>Información del pallet</h2>
+                    <p>Completa los datos necesarios para crear el registro.</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label asp-for="Descripcion">Descripción <span class="required-mark">*</span></label>
+                <input asp-for="Descripcion"
+                       class="form-control"
+                       placeholder="Ej. Pallet #00001" />
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="ApplicationUserId">Asignar a <span class="required-mark">*</span></label>
+                <select asp-for="ApplicationUserId"
+                        asp-items="Model.UserList"
+                        id="palletOwnerSelect"
+                        class="form-select">
+                    <option value=""></option>
+                </select>
+                <span asp-validation-for="ApplicationUserId" class="text-danger"></span>
+                <small class="form-hint">Puedes buscar por apellido, nombre o rol.</small>
+            </div>
+
+            <div class="field mb-0">
+                <label asp-for="Observaciones">Observaciones</label>
+                <textarea asp-for="Observaciones"
+                          class="form-control pallet-notes"
+                          rows="5"
+                          placeholder="Información adicional sobre el pallet..."></textarea>
+                <span asp-validation-for="Observaciones" class="text-danger"></span>
+            </div>
+        </section>
+
+        <aside class="surface pallet-form-aside">
+            <div class="pallet-form-heading">
+                <span class="pallet-form-icon pallet-form-icon-summary">
+                    <i class="bi bi-clipboard-check"></i>
+                </span>
+                <div>
+                    <h2>Resumen</h2>
+                    <p>Estado inicial del registro.</p>
+                </div>
+            </div>
+
+            <div class="pallet-summary-state">
+                <span>Estado inicial</span>
+                <span class="badge status-disponible">Disponible</span>
+            </div>
+            <div class="pallet-form-notice">
+                <i class="bi bi-info-circle"></i>
+                <p>El pallet quedará asignado al usuario seleccionado y disponible para futuras transferencias.</p>
+            </div>
+
+            <div class="pallet-form-actions">
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-floppy me-1"></i>Crear pallet
+                </button>
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        (() => {
+            if (!window.TomSelect) return;
+            new TomSelect('#palletOwnerSelect', {
+                create: false,
+                maxItems: 1,
+                allowEmptyOption: false,
+                placeholder: 'Escribe un nombre para buscar...',
+                searchField: ['text'],
+                onFocus() {
+                    if (!this.getValue()) {
+                        this.control_input.value = '';
+                        this.refreshOptions(true);
+                    }
+                },
+                render: {
+                    no_results: () => '<div class="no-results">No se encontraron usuarios</div>'
+                }
+            });
+        })();
+    </script>
 }
+

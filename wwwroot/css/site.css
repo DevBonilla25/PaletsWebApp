@@ -19,7 +19,21 @@
     --status-rechazado:#dc3545;
     --status-anulado:#b45309;
     --status-parcial:#2563eb;
+    --status-revision:#7c3aed;
+    --status-retirado:#d97706;
     --status-desconocido:#475569;
+    --section-participants:#2563eb;
+    --section-participants-bg:#eaf2ff;
+    --section-pallets:#f57c00;
+    --section-pallets-bg:#fff3e7;
+    --section-dates:#7c3aed;
+    --section-dates-bg:#f3efff;
+    --section-evidence:#0f766e;
+    --section-evidence-bg:#e7f7f4;
+    --section-observations:#475569;
+    --section-observations-bg:#eef2f6;
+    --section-actions:#b45309;
+    --section-actions-bg:#fff4e5;
     --shadow:0 1px 3px rgba(15,23,42,.06)
 }
 html {
@@ -804,7 +818,14 @@ span.flatpickr-weekday {
     background-color:var(--status-parcial)!important;
     color:#fff!important
 }
-.status-desconocido {
+.status-revision {
+    background-color:var(--status-revision)!important;
+    color:#fff!important
+}
+.status-retirado {
+    background-color:var(--status-retirado)!important;
+    color:#fff!important
+}.status-desconocido {
     background-color:var(--status-desconocido)!important;
     color:#fff!important
 }
@@ -823,4 +844,278 @@ span.flatpickr-weekday {
 .metric-icon-pendiente {
     background:#fff4e5;
     color:var(--status-pendiente)
+}
+
+/* Lista compacta de pallets para móvil */
+.pallet-mobile-list {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .pallet-table-view {
+        display: none;
+    }
+    .pallet-mobile-list {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+    }
+    .pallet-mobile-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 11px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+    }
+    .pallet-mobile-row .row-index {
+        width: auto;
+        margin-right: 2px;
+    }    .pallet-mobile-description {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .9rem;
+    }
+    .pallet-mobile-row .badge {
+        padding: .48em .7em;
+        font-size: .75rem;
+        white-space: nowrap;
+    }
+    .pallet-mobile-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .pallet-mobile-row {
+        gap: 6px;
+        padding-inline: 9px;
+    }
+    .pallet-mobile-row .badge {
+        max-width: 92px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+/* Selector de tabla/tarjetas para transferencias */
+.view-switcher-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fafbfc;
+}
+.view-switcher-label {
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 700;
+}
+.view-switcher .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+}
+.view-switcher .btn.active {
+    border-color: var(--sidebar);
+    background: var(--sidebar);
+    color: #ffffff;
+}
+.transfer-cards-view {
+    display: none;
+    padding: 16px;
+}
+.transfer-card-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+.transfer-record-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.transfer-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #edf0f3;
+}
+.transfer-record-header .badge {
+    flex: 0 0 auto;
+    padding: .55em .85em;
+    font-size: .84rem;
+    font-weight: 750;
+}
+.transfer-record-identity {
+    display: flex;
+    align-items: flex-start;
+    min-width: 0;
+    gap: 8px;
+}
+.transfer-record-identity > span:last-child {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.transfer-record-identity strong {
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: 1rem;
+}
+.transfer-record-identity small,
+.transfer-record-index {
+    color: var(--muted);
+    font-size: .78rem;
+}
+.transfer-record-index {
+    font-weight: 750;
+}
+.transfer-record-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 14px 0 16px;
+}
+.transfer-record-details div {
+    min-width: 0;
+}
+.transfer-record-details dt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: .75rem;
+    font-weight: 650;
+}
+.transfer-record-details dt i {
+    color: var(--primary);
+}
+.transfer-record-details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: .88rem;
+    font-weight: 600;
+}
+.transfer-record-action {
+    width: 100%;
+    margin-top: auto;
+}
+.transfer-card-empty {
+    grid-column: 1 / -1;
+}
+.transfer-results[data-view-mode="cards"] .transfer-table-view {
+    display: none;
+}
+.transfer-results[data-view-mode="cards"] .transfer-cards-view {
+    display: block;
+}
+.transfer-results[data-view-mode="table"] .transfer-table-view {
+    display: block;
+}
+.transfer-results[data-view-mode="table"] .transfer-cards-view {
+    display: none;
+}
+
+@media (max-width: 991px) and (min-width: 768px) {
+    .transfer-card-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .transfer-table-view {
+        display: none;
+    }
+    .transfer-cards-view {
+        display: block;
+        padding: 12px;
+    }
+    .transfer-card-list {
+        grid-template-columns: 1fr;
+    }
+    .transfer-record-card {
+        padding: 14px;
+    }
+    .transfer-record-details {
+        gap: 13px 18px;
+    }
+    .transfer-record-details dd {
+        font-weight: 750;
+    }
+    .view-switcher-toolbar {
+        justify-content: space-between;
+    }
+    .view-switcher {
+        width: 100%;
+        max-width: 230px;
+    }
+    .view-switcher .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+/* Brand logo */
+.brand-logo-link {
+    justify-content: center;
+    height: 94px;
+    padding: 8px 14px;
+    background: var(--sidebar);
+}
+.brand-logo-link:hover {
+    background: var(--sidebar);
+}
+.brand-logo {
+    display: block;
+    width: 78px;
+    height: 78px;
+    padding: 8px;
+    border-radius: 50%;
+    background: #fff;
+    object-fit: contain;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .2);
+}
+.sidebar-brand-footer {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: auto;
+    padding: 15px 16px;
+    border-top: 1px solid rgba(255, 255, 255, .09);
+    color: #fff;
+    text-decoration: none;
+}
+.sidebar-brand-footer:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .05);
+}
+.sidebar-brand-footer > span:last-child {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.sidebar-brand-footer strong {
+    font-size: .88rem;
+}
+.sidebar-brand-footer small {
+    color: #c9d8ec;
+    font-size: .72rem;
 }

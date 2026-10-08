@@ -1,111 +1,124 @@
-﻿@model PaletsWebApp.ViewModels.RegisterUserVM
+@model PaletsWebApp.ViewModels.RegisterUserVM
 
 @{
-    ViewData["Title"] = "Registrar Usuario";
+    ViewData["Title"] = "Registrar usuario";
 }
 
-<div class="container-fluid">
-    <a class="btn btn-primary mb-1" asp-action="Index" asp-controller="Users">Regresar</a>
-    <div class="card">
-        <div class="card-header bg-primary" >
-            <h4 class="card-title text-white">Registrar Usuario</h4>
-        </div>
-        <div class="card-body">
-            <form asp-action="Register" asp-controller="Users">
-                <div class="mb-2">
-                    <label>Nombre</label>
-                    <input type="text" asp-for="Nombres" autocomplete="off" class="form-control" />
-                    <span asp-validation-for="Nombres" class="text-danger"></span>
-                </div>
-                <div class="mb-2">
-                    <label>Apellidos</label>
-                    <input type="text" asp-for="Apellidos" autocomplete="off" class="form-control" />
-                    <span asp-validation-for="Apellidos" class="text-danger"></span>
-                </div>
-                <div class="mb-2">
-                    <label>Email</label>
-                    <input type="email" asp-for="Email" autocomplete="off" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
-                <div class="mb-2">
-                    <label>Usuario</label>
-                    <input type="text" asp-for="UserName" autocomplete="off" class="form-control" />
-                    <span asp-validation-for="UserName" class="text-danger"></span>
-                </div>
-                <div class="mb-2">
-                    <label>Contraseña</label>
-                    <input type="password" asp-for="Password" autocomplete="off" class="form-control" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
+<link rel="stylesheet" href="~/css/user-forms.css" asp-append-version="true" />
 
-                <div class="row">
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            
-                            <label>Tipo de documento</label>
-                            
-
-                            @Html.DropDownListFor(m=> m.TipoDocumento,new SelectList(Model.TiposDocumentosList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="TipoDocumento" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            <label>Documento</label>
-
-
-                            <input type="text" asp-for="Documento" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="Documento" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <div class="row">
-                    <div class="col-12">
-                        <div class="mb-2">
-
-
-                            <label>Razon Social</label>
-                            <input type="text" asp-for="RazonSocial" autocomplete="off" class="form-control" />
-                            <span asp-validation-for="RazonSocial" class="text-danger"></span>
-
-                           
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-6">
-                        <div class="mb-2">
-
-                            
-                            <label>Rol</label>
-
-                            @Html.DropDownListFor(m=> m.Rol,new SelectList(Model.RolesList, "Value", "Text"), "-seleccione-" , new{@class = "form-control"})
-                            <span asp-validation-for="Rol" class="text-danger"></span>
-
-                        </div>
-                    </div>
-
-                </div>
-
-
-
-                <div class="mb-2">
-                    
-                    <button type="submit"
-                            class="btn btn-primary"
-                            id="btnAceptar"
-                            name="submit" value="aceptar">
-                        Registrar
-                    </button>
-
-                </div>
-            </form>
-        </div>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Nuevo usuario</h1>
+        <p class="page-subtitle">Registra los datos de acceso y la información del usuario.</p>
     </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" asp-controller="Users">
+        <i class="bi bi-arrow-left me-2"></i>Cancelar
+    </a>
 </div>
+
+<form asp-action="Register" asp-controller="Users" method="post" class="user-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="user-form-layout">
+        <div class="user-form-content">
+            <section class="surface user-form-section">
+                <div class="user-form-heading">
+                    <span class="user-form-icon user-form-icon-person"><i class="bi bi-person"></i></span>
+                    <div>
+                        <h2>Información personal</h2>
+                        <p>Datos principales para identificar al usuario.</p>
+                    </div>
+                </div>
+
+                <div class="user-form-grid">
+                    <div class="field">
+                        <label asp-for="Nombres">Nombres <span class="required-mark">*</span></label>
+                        <input asp-for="Nombres" autocomplete="off" class="form-control" placeholder="Nombres" />
+                        <span asp-validation-for="Nombres" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Apellidos">Apellidos <span class="required-mark">*</span></label>
+                        <input asp-for="Apellidos" autocomplete="off" class="form-control" placeholder="Apellidos" />
+                        <span asp-validation-for="Apellidos" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="TipoDocumento">Tipo de documento <span class="required-mark">*</span></label>
+                        <select asp-for="TipoDocumento" asp-items="Model.TiposDocumentosList" class="form-select">
+                            <option value="">Selecciona un tipo</option>
+                        </select>
+                        <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Documento">Documento <span class="required-mark">*</span></label>
+                        <input asp-for="Documento" autocomplete="off" class="form-control" placeholder="Número de documento" />
+                        <span asp-validation-for="Documento" class="text-danger"></span>
+                    </div>
+                    <div class="field user-form-span-2">
+                        <label asp-for="RazonSocial">Razón social</label>
+                        <input asp-for="RazonSocial" autocomplete="off" class="form-control" placeholder="Empresa o razón social" />
+                        <span asp-validation-for="RazonSocial" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface user-form-section">
+                <div class="user-form-heading">
+                    <span class="user-form-icon user-form-icon-access"><i class="bi bi-shield-lock"></i></span>
+                    <div>
+                        <h2>Acceso al sistema</h2>
+                        <p>Credenciales y permisos iniciales.</p>
+                    </div>
+                </div>
+
+                <div class="user-form-grid">
+                    <div class="field">
+                        <label asp-for="Email">Correo electrónico <span class="required-mark">*</span></label>
+                        <input asp-for="Email" type="email" autocomplete="off" class="form-control" placeholder="usuario@empresa.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="UserName">Usuario <span class="required-mark">*</span></label>
+                        <input asp-for="UserName" autocomplete="off" class="form-control" placeholder="Nombre de usuario" />
+                        <span asp-validation-for="UserName" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Password">Contraseña <span class="required-mark">*</span></label>
+                        <input asp-for="Password" type="password" autocomplete="new-password" class="form-control" placeholder="Contraseña inicial" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Rol">Rol <span class="required-mark">*</span></label>
+                        <select asp-for="Rol" asp-items="Model.RolesList" class="form-select">
+                            <option value="">Selecciona un rol</option>
+                        </select>
+                        <span asp-validation-for="Rol" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="surface user-form-aside">
+            <div class="user-form-heading">
+                <span class="user-form-icon user-form-icon-summary"><i class="bi bi-person-check"></i></span>
+                <div>
+                    <h2>Nuevo registro</h2>
+                    <p>Revisa la información antes de guardar.</p>
+                </div>
+            </div>
+            <div class="user-form-notice">
+                <i class="bi bi-info-circle"></i>
+                <p>El rol seleccionado determinará las opciones y acciones disponibles para este usuario.</p>
+            </div>
+            <div class="user-form-actions">
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+                <button type="submit" class="btn btn-primary" id="btnAceptar" name="submit" value="aceptar">
+                    <i class="bi bi-person-plus me-1"></i>Crear usuario
+                </button>
+            </div>
+        </aside>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

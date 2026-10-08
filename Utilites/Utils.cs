@@ -18,13 +18,18 @@ namespace PaletsWebApp.Utilites
 
         public static string StatusClass(string? status)
         {
-            return status?.Trim().ToLowerInvariant() switch
+            var normalizedStatus = NormalizeStatus(status);
+            return normalizedStatus switch
             {
                 "disponible" => "status-disponible",
                 "recibido" => "status-recibido",
+                "aceptado" => "status-recibido",
                 "en transferencia" => "status-en-transferencia",
                 "por recibir" => "status-pendiente",
                 "por reclamar" => "status-pendiente",
+                "pendiente" => "status-pendiente",
+                "en revision" => "status-revision",
+                "retirado por correccion" => "status-retirado",
                 "reclamado" => "status-reclamado",
                 "en reclamo" => "status-reclamado",
                 "rechazado" => "status-rechazado",
@@ -35,6 +40,18 @@ namespace PaletsWebApp.Utilites
             };
         }
 
+        private static string NormalizeStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return string.Empty;
+
+            var decomposed = status.Trim().ToLowerInvariant()
+                .Normalize(System.Text.NormalizationForm.FormD);
+            var characters = decomposed.Where(character =>
+                System.Globalization.CharUnicodeInfo.GetUnicodeCategory(character) !=
+                System.Globalization.UnicodeCategory.NonSpacingMark);
+
+            return string.Concat(characters).Normalize(System.Text.NormalizationForm.FormC);
+        }
         public static string BadgeTransfer(string cad) => StatusClass(cad);
 
         public static string BadgePalet(string cad) => StatusClass(cad);
@@ -120,7 +137,7 @@ namespace PaletsWebApp.Utilites
             @"<table>
                 <tr>
                     <td>
-                        <img src='http://equipoti-001-site1.ftempurl.com/logomini.png'>
+                        <img src='http://equipoti-001-site1.ftempurl.com/logo_palet_bonilla.png'>
                     </td>
                     <td style='padding:10px;'>
                         <span style='font-size:24px!important; font-weight: bold;'>

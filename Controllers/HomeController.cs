@@ -63,7 +63,11 @@ namespace PaletsWebApp.Controllers
             vm.TransferenciasPorEstado = estadosTransferencias
                 .GroupBy(x => string.IsNullOrWhiteSpace(x) ? "Sin estado" : x)
                 .ToDictionary(x => x.Key!, x => x.Count());
-            vm.TransferenciasRecientes = await transfers.OrderByDescending(x => x.FechaEnvio).Take(6).ToListAsync();
+            // El Id sigue el orden de creación y evita ordenar toda la vista por una fecha no indexada.
+            vm.TransferenciasRecientes = await transfers
+                .OrderByDescending(x => x.Id)
+                .Take(6)
+                .ToListAsync();
             return vm;
         }
 
