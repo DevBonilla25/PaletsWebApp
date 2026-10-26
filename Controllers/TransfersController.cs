@@ -112,7 +112,7 @@ namespace PaletsWebApp.Controllers
             var loggedInUserRole = await _userManager.GetRolesAsync(loggedInUser!);
 
             // Determinar si el usuario puede reclamar palets
-            ViewBag.CanReclaimPalets = !loggedInUserRole.Contains(WebsiteRoles.Cliente);
+            ViewBag.CanReclaimPalets = loggedInUserRole.Contains(WebsiteRoles.Bodeguero);
 
             if (palletId.HasValue)
             {
@@ -383,7 +383,7 @@ namespace PaletsWebApp.Controllers
 
         // Busca pallets y reconstruye la selección acumulada usando solo sus IDs.
         [HttpGet]
-        [Authorize(Roles = "Admin,Supervisor,Bodeguero,Chofer")]
+        [Authorize(Roles = "Bodeguero")]
         public async Task<IActionResult> Reclamar(
             string sDescripcion, 
             string selectedPaletIds)
@@ -525,7 +525,7 @@ namespace PaletsWebApp.Controllers
         // Valida y crea un reclamo atómico con todos los pallets seleccionados.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Supervisor,Bodeguero,Chofer")]
+        [Authorize(Roles = "Bodeguero")]
         public async Task<IActionResult> Reclamar(TransferenciaVM vm)
         {
             var loggedInUser = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == User.Identity!.Name);
