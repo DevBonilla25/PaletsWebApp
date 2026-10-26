@@ -691,12 +691,17 @@ namespace PaletsWebApp.Controllers
                     "El usuario que crea el reclamo no existe.", "USER_NOT_FOUND"));
             }
 
-            var rolesPermitidos = new[] { WebsiteRoles.Admin, WebsiteRoles.Bodeguero, WebsiteRoles.Chofer };
             var rolesUsuario = await _userManager.GetRolesAsync(usuario);
-            if (!rolesUsuario.Any(x => rolesPermitidos.Contains(x)))
+            if (!rolesUsuario.Contains(WebsiteRoles.Bodeguero!))
             {
                 return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Failed(
                     "El usuario no tiene permiso para crear reclamos.", "CLAIM_FORBIDDEN"));
+            }
+
+            if (string.IsNullOrWhiteSpace(regVM.Observaciones))
+            {
+                return BadRequest(ApiResponse.Failed(
+                    "El motivo del reclamo es obligatorio.", "CLAIM_REASON_REQUIRED"));
             }
 
             List<int> idsPalets;
@@ -785,7 +790,7 @@ namespace PaletsWebApp.Controllers
                 ApplicationUserIdEnvia = usuario.Id,
                 ApplicationUserIdRecibe = "Administradores",
                 Estado = estadoPorReclamar.Id.ToString(),
-                Observaciones = regVM.Observaciones
+                Observaciones = regVM.Observaciones.Trim()
             };
 
             await _context.Transferencias!.AddAsync(reg);
